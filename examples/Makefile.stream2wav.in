@@ -1,0 +1,8 @@
+SOURCES = stream2wav.ml
+RESULT = stream2wav
+LIBS = unix str ogg vorbis
+INCDIRS = ../src @OCAMLOGG_INC@
+
+all: nc
+
+-include OCamlMakefile

@@ -1,0 +1,56 @@
+# Copyright (c) 2003 by the Savonet team
+#
+# libvorbis bindings for OCaml.
+#
+# by Samuel Mimram
+
+# $Id$
+
+
+OCAMLMAKEFILE = OCamlMakefile
+
+OCAMLFIND = @OCAMLFIND@
+OCAMLFIND_LDCONF = @OCAMLFIND_LDCONF@
+OCAMLC = @OCAMLC@
+OCAMLOPT = @OCAMLOPT@
+BEST = @BEST@
+OCAMLMKTOP = @OCAMLMKTOP@
+OCAMLCP = @OCAMLCP@
+OCAMLDEP = @OCAMLDEP@
+OCAMLLEX = @OCAMLLEX@
+OCAMLYACC = @OCAMLYACC@
+OCAMLDOC = @OCAMLDOC@
+LATEX = @LATEX@
+DVIPS = @DVIPS@
+PS2PDF = @PS2PDF@
+OCAMLLIBPATH = @CAMLLIBPATH@
+CC = @CC@
+CFLAGS = -Wall @CFLAGS@ @OGG_CFLAGS@ @VORBIS_CFLAGS@
+CPPFLAGS = @CPPFLAGS@
+OCAMLDOCFLAGS = -stars
+
+SOURCES = vorbis_stubs.c vorbis.mli vorbis.ml
+RES_CLIB_SUF = _stubs
+RESULT = vorbis
+LIBINSTALL_FILES = $(wildcard *.mli *.cmi *.cma *.cmxa *.cmx *.a *.so)
+LIBS = unix str
+INCDIRS = @OCAMLOGG_INC@
+ACLIBS = @LIBS@
+OGG_LIBS = @OGG_LIBS@
+VORBIS_LIBS = @VORBIS_LIBS@
+CLIBS = $(ACLIBS:-l%=%) $(OGG_LIBS:-l%=%) $(VORBIS_LIBS:-l%=%)
+LDFLAGS = @LDFLAGS@ @OGG_LDFLAGS@ @VORBIS_LDFLAGS@
+
+all: $(BEST)
+
+byte: byte-code-library
+opt: native-code-library
+debug: debug-code-library
+
+install: libinstall
+
+uninstall: libuninstall
+
+update: uninstall install
+
+-include $(OCAMLMAKEFILE)

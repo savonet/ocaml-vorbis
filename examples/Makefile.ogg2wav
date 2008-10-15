@@ -1,0 +1,8 @@
+SOURCES = ogg2wav.ml
+RESULT = ogg2wav
+LIBS = unix str vorbis
+INCDIRS = ../src
+
+all: nc
+
+-include OCamlMakefile
