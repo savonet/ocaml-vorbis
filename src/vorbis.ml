@@ -100,11 +100,18 @@ struct
 
   external reset : t -> unit = "ocaml_vorbis_reset"
 
-  external headerout : t -> Ogg.Stream.t -> (string * string) array -> unit = "ocaml_vorbis_analysis_headerout"
+
+  external headerout_packetout : t -> (string * string) array -> Ogg.Stream.packet*Ogg.Stream.packet*Ogg.Stream.packet =  "ocaml_vorbis_analysis_headerout"
+
+  let headerout_packetout state tags =
+    let tags = Array.of_list (tags@[("ENCODER", encoder_tag)]) in
+      headerout_packetout state tags
 
   let headerout state os tags =
-    let tags = Array.of_list (tags@[("ENCODER", encoder_tag)]) in
-      headerout state os tags
+    let p1,p2,p3 = headerout_packetout state tags in
+    Ogg.Stream.put_packet os p1;
+    Ogg.Stream.put_packet os p2;
+    Ogg.Stream.put_packet os p3 
 
   external encode_buffer_float : t -> Ogg.Stream.t -> float array array -> int -> int -> unit = "ocaml_vorbis_encode_float"
 

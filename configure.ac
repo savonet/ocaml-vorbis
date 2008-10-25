@@ -207,6 +207,7 @@ AC_SUBST(PS2PDF)	# TODO
 # Finally create the Makefile and samples
 AC_CONFIG_FILES([src/Makefile],[chmod a-w src/Makefile])
 AC_CONFIG_FILES([examples/Makefile.wav2ogg],[chmod a-w examples/Makefile.wav2ogg])
+AC_CONFIG_FILES([examples/Makefile.ogg2wav],[chmod a-w examples/Makefile.ogg2wav])
 AC_CONFIG_FILES([examples/Makefile.stream2wav],[chmod a-w examples/Makefile.stream2wav])
 AC_CONFIG_FILES([src/META],[chmod a-w src/META])
 AC_OUTPUT

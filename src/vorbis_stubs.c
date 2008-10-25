@@ -385,10 +385,11 @@ CAMLprim value ocaml_vorbis_reset(value vdsp)
   return Val_unit;
 }
 
-CAMLprim value ocaml_vorbis_analysis_headerout(value vdsp, value vogg, value comments)
+CAMLprim value ocaml_vorbis_analysis_headerout(value vdsp, value comments)
 {
+  CAMLparam2(vdsp, comments);
+  CAMLlocal4(ret,p1,p2,p3);
   vorbis_dsp_state *vd = Enc_dsp_state_val(vdsp);
-  ogg_stream_state *os = Stream_state_val(vogg);
   vorbis_comment vc;
   ogg_packet header, header_comm, header_code;
   int i;
@@ -398,11 +399,13 @@ CAMLprim value ocaml_vorbis_analysis_headerout(value vdsp, value vogg, value com
     vorbis_comment_add_tag(&vc, String_val(Field(Field(comments, i), 0)), String_val(Field(Field(comments, i), 1)));
   vorbis_analysis_headerout(vd, &vc, &header, &header_comm, &header_code);
   vorbis_comment_clear(&vc);
-  ogg_stream_packetin(os, &header);
-  ogg_stream_packetin(os, &header_comm);
-  ogg_stream_packetin(os, &header_code);
 
-  return Val_unit;
+  ret = caml_alloc_tuple(3);
+  Store_field(ret,0,value_of_packet(&header));
+  Store_field(ret,1,value_of_packet(&header_comm));
+  Store_field(ret,2,value_of_packet(&header_code));
+
+  CAMLreturn(ret);
 }
 
 CAMLprim value ocaml_vorbis_encode_float(value vdsp, value vogg, value data, value _offs, value _len)

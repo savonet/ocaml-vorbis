@@ -137,6 +137,12 @@ sig
   (** Encode a header given a list of tags. *)
   val headerout : t -> Ogg.Stream.t -> (string * string) list -> unit
 
+  (** Encoder a header, but do not submit packet to
+    * Ogg Stream. Usefull when multiplexing ogg streams
+    * since the all first packets of each streams must be packed
+    * in the initial pages. *)
+  val headerout_packetout : t -> (string * string) list -> Ogg.Stream.packet*Ogg.Stream.packet*Ogg.Stream.packet
+
   (** Encode a buffer of PCM data. *)
   val encode_buffer_float : t -> Ogg.Stream.t -> float array array -> int -> int -> unit
 
