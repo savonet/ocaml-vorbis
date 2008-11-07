@@ -900,3 +900,69 @@ CAMLprim value ocaml_vorbis_decoder_serialnumber(value d_f, value bs)
 
   CAMLreturn(Val_int(ret));
 }
+
+/* Ogg skeleton interface */
+
+/* Wrappers */
+static void write32le(unsigned char *ptr,ogg_uint32_t v)
+{
+  ptr[0]=v&0xff;
+  ptr[1]=(v>>8)&0xff;
+  ptr[2]=(v>>16)&0xff;
+  ptr[3]=(v>>24)&0xff;
+}
+
+static void write64le(unsigned char *ptr,ogg_int64_t v)
+{
+  ogg_uint32_t hi=v>>32;
+  ptr[0]=v&0xff;
+  ptr[1]=(v>>8)&0xff;
+  ptr[2]=(v>>16)&0xff;
+  ptr[3]=(v>>24)&0xff;
+  ptr[4]=hi&0xff;
+  ptr[5]=(hi>>8)&0xff;
+  ptr[6]=(hi>>16)&0xff;
+  ptr[7]=(hi>>24)&0xff;
+}
+
+/* Values from http://xiph.org/ogg/doc/skeleton.html */
+#define FISBONE_IDENTIFIER "fisbone\0"
+#define FISBONE_MESSAGE_HEADER_OFFSET 44
+#define FISBONE_SIZE 52
+
+/* Code from theorautils.c in ffmpeg2theora */
+CAMLprim value ocaml_vorbis_skeleton_fisbone(value serial, value samplerate, value start, value content)
+{
+  CAMLparam4(serial,samplerate,start,content);
+  CAMLlocal1(packet);
+  ogg_packet op;
+  int len = FISBONE_SIZE+caml_string_length(content);
+
+  memset (&op, 0, sizeof (op));
+  op.packet = malloc(len);
+  if (op.packet == NULL)
+    caml_failwith("malloc");
+
+  memset (op.packet, 0, len);
+  /* it will be the fisbone packet for the vorbis audio */
+  memcpy (op.packet, FISBONE_IDENTIFIER, 8); /* identifier */
+  write32le(op.packet+8, FISBONE_MESSAGE_HEADER_OFFSET); /* offset of the message header fields */
+  write32le(op.packet+12, Nativeint_val(serial)); /* serialno of the vorbis stream */
+  write32le(op.packet+16, 3); /* number of header packet */
+  /* granulerate, temporal resolution of the bitstream in Hz */
+  write64le(op.packet+20, (ogg_int64_t)Int64_val(samplerate)); /* granulerate numerator */
+  write64le(op.packet+28, (ogg_int64_t)1); /* granulerate denominator */
+  write64le(op.packet+36, (ogg_int64_t)Int64_val(start)); /* start granule */
+  write32le(op.packet+44, 2); /* preroll, for vorbis its 2 */
+  *(op.packet+48) = 0; /* granule shift, always 0 for vorbis */
+  memcpy (op.packet+FISBONE_SIZE, String_val(content), caml_string_length(content));
+
+  op.b_o_s = 0;
+  op.e_o_s = 0;
+  op.bytes = len;
+
+  packet = value_of_packet(&op);
+  free(op.packet);
+  CAMLreturn(packet);
+}
+

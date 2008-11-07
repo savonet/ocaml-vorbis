@@ -259,3 +259,18 @@ sig
   end
 end
 
+module Skeleton : 
+sig
+
+  (** Generate a vorbis fisbone packet with 
+    * these parameters, to use in an ogg skeleton.
+    * Default value for [start_granule] is [Int64.zero],
+    * Default value for [headers] is ["Content-type","audio/vorbis"]
+    *
+    * See: http://xiph.org/ogg/doc/skeleton.html. *)
+  val fisbone :
+    ?start_granule:Int64.t ->
+    ?headers:(string * string) list ->
+    serialno:Nativeint.t -> samplerate:Int64.t -> unit -> Ogg.Stream.packet
+
+end

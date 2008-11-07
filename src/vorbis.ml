@@ -237,3 +237,21 @@ struct
   external restart : t -> unit = "ocaml_vorbis_synthesis_restart"
   
 end
+
+module Skeleton = 
+struct
+
+  external fisbone : Nativeint.t -> Int64.t -> Int64.t -> string -> Ogg.Stream.packet = "ocaml_vorbis_skeleton_fisbone"
+
+  let fisbone ?(start_granule=Int64.zero) 
+              ?(headers=["Content-type","audio/vorbis"]) 
+              ~serialno ~samplerate () = 
+    let concat s (h,v) =
+      Printf.sprintf "%s%s: %s\r\n" s h v 
+    in
+    let s = 
+      List.fold_left concat "" headers
+    in
+    fisbone serialno samplerate start_granule s
+
+end
