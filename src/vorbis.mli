@@ -122,7 +122,7 @@ sig
 
   (** [create chans rate max_br nom_br min_br] creates a new encoder with
     * [chans] channels, with sample rate [rate] Hz and with respectively [max_br],
-    * [nom_br] and [min_br] as maximal, nominal and minimal bitrates.
+    * [nom_br] and [min_br] as maximal, nominal and minimal bitrates (in bps).
     *)
   val create : int -> int -> int -> int -> int -> t
 
@@ -244,7 +244,7 @@ sig
     (** Get the vorbis information from the stream header of a bitstream. *)
     val info : t -> bitstream -> info
   
-    (** Get the bitrate of a bitsream. *)
+    (** Get the bitrate of a bitsream (in bps). *)
     val bitrate : t -> bitstream -> int
   
     (** Get the total pcm samples of a bitstream. *)
