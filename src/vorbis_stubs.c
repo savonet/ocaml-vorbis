@@ -452,6 +452,13 @@ CAMLprim value ocaml_vorbis_encode_float(value vdsp, value vogg, value data, val
   CAMLreturn(Val_unit);
 }
 
+CAMLprim value ocaml_vorbis_encode_time_of_granulepos(value v_state, value gpos)
+{
+  CAMLparam2(v_state,gpos);
+  encoder_t *enc = Encoder_val(v_state);
+  ogg_int64_t granulepos = Int64_val(gpos);
+  CAMLreturn(caml_copy_nativeint(vorbis_granule_time(&enc->vd,granulepos)));
+}
 
 /***** File Decoding *****/
 

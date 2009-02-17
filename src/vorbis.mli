@@ -146,6 +146,11 @@ sig
   (** Encode a buffer of PCM data. *)
   val encode_buffer_float : t -> Ogg.Stream.t -> float array array -> int -> int -> unit
 
+  (** Convert a granulepos to absolute time in seconds. The granulepos is
+    * interpreted in the context of a given encoder, and gives
+    * the end time of a frame's presentation as used in Ogg mux ordering. *)
+  val time_of_granulepos : t -> Int64.t -> Nativeint.t
+
   val end_of_stream : t -> Ogg.Stream.t -> unit
 end
 

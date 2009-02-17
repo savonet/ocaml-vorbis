@@ -115,6 +115,8 @@ struct
 
   external encode_buffer_float : t -> Ogg.Stream.t -> float array array -> int -> int -> unit = "ocaml_vorbis_encode_float"
 
+  external time_of_granulepos : t -> Int64.t -> Nativeint.t = "ocaml_vorbis_encode_time_of_granulepos"
+
   let end_of_stream enc os =
     encode_buffer_float enc os [||] 0 0
 end

@@ -1,9 +1,11 @@
-0.5.0 ()
+0.5.0 (17-02-2009)
 ====
 * Binded low-level decoding API
   in order to decode ogg streams.
   Previous Decoder module has been
   moved to File.Decoder
+* Added time_of_granulepos to get the 
+  relative time corresponding to a granulepos. 
 
 0.4.1 (16-04-2008)
 =====
