@@ -33,13 +33,13 @@ SOURCES = vorbis_stubs.c vorbis.mli vorbis.ml
 RES_CLIB_SUF = _stubs
 RESULT = vorbis
 LIBINSTALL_FILES = $(wildcard *.mli *.cmi *.cma *.cmxa *.cmx *.a *.so)
-LIBS = unix str
 INCDIRS = @OCAMLOGG_INC@
 ACLIBS = @LIBS@
 OGG_LIBS = @OGG_LIBS@
 VORBIS_LIBS = @VORBIS_LIBS@
 CLIBS = $(ACLIBS:-l%=%) $(OGG_LIBS:-l%=%) $(VORBIS_LIBS:-l%=%)
 LDFLAGS = @LDFLAGS@ @OGG_LDFLAGS@ @VORBIS_LDFLAGS@
+NO_CUSTOM = yes
 
 all: $(BEST)
 
