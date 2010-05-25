@@ -197,7 +197,7 @@ CAMLprim value ocaml_vorbis_synthesis_init(value packet, value packet2, value pa
 
   decoder_t *vt = malloc(sizeof(decoder_t));
   if (vt == NULL)
-    caml_failwith("malloc");
+    caml_raise_out_of_memory();
 
   vorbis_info_init(&vt->vi);
   vorbis_comment_init(&vt->vc);
@@ -948,7 +948,7 @@ CAMLprim value ocaml_vorbis_skeleton_fisbone(value serial, value samplerate, val
   memset (&op, 0, sizeof (op));
   op.packet = malloc(len);
   if (op.packet == NULL)
-    caml_failwith("malloc");
+    caml_raise_out_of_memory();
 
   memset (op.packet, 0, len);
   /* it will be the fisbone packet for the vorbis audio */
