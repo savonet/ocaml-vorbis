@@ -1,3 +1,9 @@
+0.5.2 ()
+=====
+* Check for consistency when encoding a float array.
+* Accept to encode an array with more channels than
+  the encoder requires.
+
 0.5.1 (14-10-2009)
 =====
 * Added support for --enable-debugging configure option

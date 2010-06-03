@@ -390,7 +390,8 @@ CAMLprim value ocaml_vorbis_analysis_headerout(value vdsp, value comments)
   CAMLparam2(vdsp, comments);
   CAMLlocal4(ret,p1,p2,p3);
   vorbis_dsp_state *vd = Enc_dsp_state_val(vdsp);
-  vorbis_comment vc;
+  
+vorbis_comment vc;
   ogg_packet header, header_comm, header_code;
   int i;
 
@@ -421,11 +422,13 @@ CAMLprim value ocaml_vorbis_encode_float(value vdsp, value vogg, value data, val
   float **vorbis_buffer;
   int c, i;
   value datac;
+  int channels = enc->vi.channels;
 
-  /* TODO: check for consistency of data */
+  if (Wosize_val(data) < channels) 
+    caml_raise_constant(*caml_named_value("vorbis_exn_invalid_channels"));
 
   vorbis_buffer = vorbis_analysis_buffer(vd, len);
-  for(c = 0; c < Wosize_val(data); c++)
+  for(c = 0; c < channels; c++)
   {
     datac = Field(data, c);
     for(i = 0; i < len; i++)
