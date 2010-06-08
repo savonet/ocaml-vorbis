@@ -409,6 +409,13 @@ vorbis_comment vc;
   CAMLreturn(ret);
 }
 
+CAMLprim value ocaml_vorbis_encode_get_channels(value vdsp)
+{
+  CAMLparam1(vdsp);
+  encoder_t *enc = Encoder_val(vdsp);
+  CAMLreturn(Val_int(enc->vi.channels));
+}
+
 CAMLprim value ocaml_vorbis_encode_float(value vdsp, value vogg, value data, value _offs, value _len)
 {
   CAMLparam3(vdsp, vogg, data);

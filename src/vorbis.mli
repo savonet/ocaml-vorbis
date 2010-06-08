@@ -143,7 +143,13 @@ sig
     * in the initial pages. *)
   val headerout_packetout : t -> (string * string) list -> Ogg.Stream.packet*Ogg.Stream.packet*Ogg.Stream.packet
 
-  (** Encode a buffer of PCM data. *)
+  (** Get the number of audio channels expected by 
+    * the encoder. *)
+  val get_channels : t -> int
+
+  (** Encode a buffer of PCM data. 
+    * The PCM data array must have at least the expected
+    * number of channels. Otherwise, the function raises [Invalid_channels]. *)
   val encode_buffer_float : t -> Ogg.Stream.t -> float array array -> int -> int -> unit
 
   (** Convert a granulepos to absolute time in seconds. The granulepos is

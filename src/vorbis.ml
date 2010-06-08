@@ -113,12 +113,21 @@ struct
     Ogg.Stream.put_packet os p2;
     Ogg.Stream.put_packet os p3 
 
+  external get_channels : t -> int = "ocaml_vorbis_encode_get_channels"
+  
   external encode_buffer_float : t -> Ogg.Stream.t -> float array array -> int -> int -> unit = "ocaml_vorbis_encode_float"
 
   external time_of_granulepos : t -> Int64.t -> Nativeint.t = "ocaml_vorbis_encode_time_of_granulepos"
 
+  (* We encode a buffer with 0 samples to finish
+   * the stream, according to the documentation of
+   * vorbis_analysis_wrote:
+   * "A value of zero means all input data has been provided and 
+   * the compressed stream should be finalized." *)
   let end_of_stream enc os =
-    encode_buffer_float enc os [||] 0 0
+    let chans = get_channels enc in
+    let data = Array.make chans [||] in
+    encode_buffer_float enc os data 0 0
 end
 
 let split_comment comment =
