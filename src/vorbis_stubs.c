@@ -87,12 +87,6 @@ static void raise_err(int ret)
   }
 }
 
-static void check_err(int ret)
-{
-  if (ret)
-    raise_err(ret);
-}
-
 /**** Decoding *****/
 
 typedef struct
@@ -343,10 +337,14 @@ CAMLprim value ocaml_vorbis_analysis_init(value channels, value rate, value max_
 {
   encoder_t *enc = malloc(sizeof(encoder_t));
   value ans;
+  int err;
 
   vorbis_info_init(&enc->vi);
-  /* TODO: clear info on error */
-  check_err(vorbis_encode_init(&enc->vi, Int_val(channels), Int_val(rate), Int_val(max_bitrate), Int_val(nominal_bitrate), Int_val(min_bitrate)));
+  err = vorbis_encode_init(&enc->vi, Int_val(channels), Int_val(rate), Int_val(max_bitrate), Int_val(nominal_bitrate), Int_val(min_bitrate));
+  if (err) {
+    vorbis_info_clear(&enc->vi);
+    raise_err(err);  
+  }
   vorbis_analysis_init(&enc->vd, &enc->vi);
   vorbis_block_init(&enc->vd, &enc->vb);
   ans = caml_alloc_custom(&encoder_ops, sizeof(encoder_t*), 1, 0);
@@ -359,10 +357,14 @@ CAMLprim value ocaml_vorbis_analysis_init_vbr(value channels, value rate, value 
 {
   encoder_t *enc = malloc(sizeof(encoder_t));
   value ans;
+  int err;
 
   vorbis_info_init(&enc->vi);
-  /* TODO: clear info on error */
-  check_err(vorbis_encode_init_vbr(&enc->vi, Int_val(channels), Int_val(rate), Double_val(quality)));
+  err = vorbis_encode_init_vbr(&enc->vi, Int_val(channels), Int_val(rate), Double_val(quality));
+  if (err) {
+    vorbis_info_clear(&enc->vi);
+    raise_err(err);
+  }
   vorbis_analysis_init(&enc->vd, &enc->vi);
   vorbis_block_init(&enc->vd, &enc->vb);
   ans = caml_alloc_custom(&encoder_ops, sizeof(encoder_t*), 1, 0);
