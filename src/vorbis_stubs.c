@@ -255,8 +255,8 @@ CAMLprim value ocaml_vorbis_decode_pcm(value vorbis_state, value stream_state, v
         break;
       if (samples > len - total_samples)
         samples = len - total_samples;
-      if (Wosize_val(buf) < vi->channels)
-        caml_raise_constant(*caml_named_value("vorbis_exn_invalid"));
+      if (Wosize_val(buf) != vi->channels)
+        caml_raise_constant(*caml_named_value("vorbis_exn_invalid_channels"));
       for (i=0 ; i<vi->channels ; i++)
       {
         chan = Field(buf,i);
@@ -433,7 +433,7 @@ CAMLprim value ocaml_vorbis_encode_float(value vdsp, value vogg, value data, val
   value datac;
   int channels = enc->vi.channels;
 
-  if (Wosize_val(data) < channels) 
+  if (Wosize_val(data) != channels) 
     caml_raise_constant(*caml_named_value("vorbis_exn_invalid_channels"));
 
   vorbis_buffer = vorbis_analysis_buffer(vd, len);
