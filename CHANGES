@@ -3,6 +3,11 @@
 * Check for consistency when encoding a float array.
 * Only to encode or decode an array with the same number of 
   channels that the encoder/decoder requires.
+* Cleaned unused exceptions.
+* Added function to return a string representation of
+  the exceptions defined in this module.
+* Register previous function with Printexc.register_printer
+  when available (ocaml >= 3.11.2)
 
 0.5.1 (14-10-2009)
 =====

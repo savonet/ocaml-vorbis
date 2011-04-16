@@ -30,11 +30,7 @@
 type encoder
 
 exception Invalid_parameters
-exception Invalid_quality
-exception Invalid_bitrate
-exception Invalid_samplesize
 exception Invalid_channels
-exception Invalid_sample_freq
 exception Could_not_open_file
 exception Not_vorbis
 exception Hole_in_data
@@ -50,13 +46,54 @@ exception Not_audio
 exception False
 exception Utf8_failure of string
 
+(* Dummy registration function for 
+ * user compiling with ocaml < 3.11.2 *)
+let register_printer _ = ()
+
+(* Now open Printexc, 
+ * overriding register_printer
+ * if present *)
+open Printexc
+
+(* New register exception printer *)
+let string_of_exc e =
+  let f s = Some s in
+  match e with
+    | Invalid_parameters -> f "Invalid vorbis parameters"
+    | Invalid_channels   -> f "Invalid vorbis channels"
+    | Could_not_open_file -> f "Vorbis: could not open file"
+    | Not_vorbis          -> f "Bitstream is not Vorbis data"
+    | Hole_in_data        -> f "Interruption in the vorbis data (one of: \
+                                garbage between pages, loss of sync \
+                                followed by recapture, or a corrupt \
+                                page)"
+    | Bad_link            -> f "An invalid vorbis stream section was \
+                                supplied, or the requested link is corrupt" 
+    | Version_mismatch    -> f "Vorbis bitstream version mismatch"
+    | Bad_header          -> f "Invalid Vorbis bitstream header"
+    | Read_error          -> f "Vorbis: read error"
+    | Internal_fault      -> f "Internal vorbis logic fault; indicates a bug \
+                                or heap/stack corruption"
+    | Invalid_argument    -> f "Invalid vorbis setup request, e.g. out of \
+                                range argument"
+    | Not_implemented     -> f "Unimplemented vorbis feature (e.g. -0.2 \
+                                quality is only available in aoTuV's \
+                                implementation)"
+    | Unknown_error i     -> f (Printf.sprintf "Unknown vorbis error %i \
+                               (it should not have happened, please report)" i)
+    | Not_audio           -> f "Ogg packet doesn't contain audio data"
+    | False               -> f "Vorbis call returned a 'false' status (eg, \
+                                playback is not in progress, and thus there \
+                                is no instantaneous bitrate information to \
+                                report.)"
+    | Utf8_failure s      -> f (Printf.sprintf "UTF8 failure in string: %S" s)
+    | _                   -> None
+
+let () = register_printer string_of_exc
+
 let _ =
   Callback.register_exception "vorbis_exn_invalid_parameters" Invalid_parameters;
-  Callback.register_exception "vorbis_exn_invalid_quality" Invalid_quality;
-  Callback.register_exception "vorbis_exn_invalid_bitrate" Invalid_bitrate;
-  Callback.register_exception "vorbis_exn_invalid_samplesize" Invalid_samplesize;
   Callback.register_exception "vorbis_exn_invalid_channels" Invalid_channels;
-  Callback.register_exception "vorbis_exn_invalid_sample_freq" Invalid_sample_freq;
   Callback.register_exception "vorbis_exn_could_not_open_file" Could_not_open_file;
   Callback.register_exception "vorbis_exn_not_vorbis" Not_vorbis;
   Callback.register_exception "vorbis_exn_hole_in_data" Hole_in_data;

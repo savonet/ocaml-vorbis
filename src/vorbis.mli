@@ -37,17 +37,8 @@ exception False
 (** Some parameters are invalid for this function. *)
 exception Invalid_parameters
 
-(** The given quality in invalid. *)
-exception Invalid_quality
-
-(** The given bitrate is invalid. *)
-exception Invalid_bitrate
-
 (** The given number of channels is invalid. *)
 exception Invalid_channels
-
-(** The given sampling frequency is invalid. *)
-exception Invalid_sample_freq
 
 (** Invalid setup request, e.g. out of range argument. *)
 exception Invalid_argument
@@ -89,6 +80,10 @@ exception Unknown_error of int
 
 (** Error while converting utf8. *)
 exception Utf8_failure of string
+
+(** Return a string representation
+  * of an exception *)
+val string_of_exc : exn -> string option
 
 (** {1 Useful types} *)
 
