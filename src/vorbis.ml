@@ -275,13 +275,6 @@ struct
 
   external decode_pcm : t -> Ogg.Stream.t -> float array array -> int -> int -> int = "ocaml_vorbis_decode_pcm"
 
-  let decode_pcm dec os buf pos len = 
-    let ret = decode_pcm dec os buf pos len in
-    if ret = 0 then
-      raise Ogg.Not_enough_data
-    else
-      ret
-
   external restart : t -> unit = "ocaml_vorbis_synthesis_restart"
   
 end

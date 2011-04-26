@@ -275,10 +275,22 @@ CAMLprim value ocaml_vorbis_decode_pcm(value vorbis_state, value stream_state, v
       CAMLreturn(Val_int(total_samples));
 
     ret = ogg_stream_packetout(os,&op);
+    /* returned values are:
+     * 1: ok
+     * 0: not enough data. in this case
+     *    we return the number of samples
+     *    decoded if > 0 and raise 
+     *    Ogg_not_enough_data otherwise
+     * -1: out of sync */
     if (ret == 0)
-      CAMLreturn(Val_int(total_samples)); 
-    if (ret < 0)
-      raise_err(ret);
+    {
+      if (total_samples > 0)
+        CAMLreturn(Val_int(total_samples)); 
+      else
+        caml_raise_constant(*caml_named_value("ogg_exn_not_enough_data"));
+    }
+    if (ret == -1)
+      caml_raise_constant(*caml_named_value("ogg_exn_out_of_sync"));
 
     caml_enter_blocking_section();
     ret = vorbis_synthesis(vb,&op);
