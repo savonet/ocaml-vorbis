@@ -8,6 +8,7 @@
   the exceptions defined in this module.
 * Register previous function with Printexc.register_printer
   when available (ocaml >= 3.11.2)
+* Added decoding module for the new Ogg_demuxer module.
 
 0.5.1 (14-10-2009)
 =====

@@ -31,7 +31,7 @@ CFLAGS = -Wall @CFLAGS@ @OGG_CFLAGS@ @VORBIS_CFLAGS@
 CPPFLAGS = @CPPFLAGS@
 OCAMLDOCFLAGS = -stars
 
-SOURCES = vorbis_stubs.c vorbis.mli vorbis.ml
+SOURCES = vorbis_stubs.c vorbis.mli vorbis.ml ogg_demuxer_vorbis_decoder.mli ogg_demuxer_vorbis_decoder.ml
 RES_CLIB_SUF = _stubs
 RESULT = vorbis
 LIBINSTALL_FILES = $(wildcard *.mli *.cmi *.cma *.cmxa *.cmx *.a *.so)

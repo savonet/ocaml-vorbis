@@ -1,5 +1,5 @@
 (*
- * Copyright 2003-2006 Savonet team
+ * Copyright 2003-2011 Savonet team
  *
  * This file is part of Ocaml-vorbis.
  *
