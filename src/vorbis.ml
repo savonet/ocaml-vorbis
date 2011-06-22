@@ -203,25 +203,25 @@ struct
   struct
     type t
   
-    external create : (int -> string * int) -> (int -> Unix.seek_command -> int) -> (unit -> unit) -> (unit -> int) -> t = "ocaml_vorbis_open_dec_stream"
-  
-    let openfile_with_fd f =
+    external create : (int -> string * int) -> (int -> Unix.seek_command -> int) -> (unit -> int) -> t = "ocaml_vorbis_open_dec_stream"
+ 
+    let openfile_with_fd fd =
+      try
+        create
+         (fun n ->
+            let buf = String.create n in
+            let r = Unix.read fd buf 0 n in
+            buf, r)
+         (fun n cmd -> Unix.lseek fd n cmd)
+         (fun () -> Unix.lseek fd 0 Unix.SEEK_CUR)
+      with
+        | e ->
+            Unix.close fd;
+            raise e
+
+    let openfile f = 
       let fd = Unix.openfile f [Unix.O_RDONLY] 0o400 in
-        try
-          create
-            (fun n ->
-               let buf = String.create n in
-               let r = Unix.read fd buf 0 n in
-                 buf, r)
-            (fun n cmd -> Unix.lseek fd n cmd)
-            (fun () -> Unix.close fd)
-            (fun () -> Unix.lseek fd 0 Unix.SEEK_CUR), fd
-        with
-          | e ->
-              Unix.close fd;
-              raise e
-  
-    let openfile f = fst (openfile_with_fd f)
+      openfile_with_fd fd, fd
   
     external decode_float : t -> float array array -> int -> int -> int = "ocaml_vorbis_decode_float"
   
@@ -231,8 +231,6 @@ struct
   
     let decode df ?(big_endian=false) ?(sample_size=2) ?(signed=true) buf ofs len =
       decode df big_endian sample_size signed buf ofs len
-  
-    external close : t -> unit = "ocaml_vorbis_close_dec_file"
   
     external bitstream : t -> int = "ocaml_vorbis_get_dec_file_bitstream"
   

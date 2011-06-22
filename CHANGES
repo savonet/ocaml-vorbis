@@ -1,3 +1,9 @@
+0.6.0 ()
+=====
+* Changed Vorbis,File opening API
+* Fixed segfault when finalixing
+  a file decoder.
+
 0.5.2 ()
 =====
 * Check for consistency when encoding a float array.

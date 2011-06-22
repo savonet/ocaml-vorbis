@@ -198,22 +198,20 @@ sig
     (** Internal state of a decoder. *)
     type t
   
-    (** [create read_func seek_func close_func tell_func params] opens a
+    (** [create read_func seek_func tell_func params] opens a
       * stream like [openfile] for decoding but callbacks are used to
       * manipulate the data. [read_func] should return the requested amount of bytes
       * (or less if it is the end of file), [seek_funk] should return 0 if the seek
-      * was ok or -1 if the stream is not seekable, [close_func] should close the
-      * stream, and [tell_func] should return the current offset or -1 if there is
-      * no notion of offset in the stream. Raises: [Read_error], [Not_vorbis],
-      * [Version_mismatch], [Bad_header], [Internal_fault].
+      * was ok or -1 if the stream is not seekable, [tell_func] should return the current 
+      * offset or -1 if there is no notion of offset in the stream. 
+      * Raises: [Read_error], [Not_vorbis], [Version_mismatch], [Bad_header], [Internal_fault].
       *)
-    val create : (int -> string * int) -> (int -> Unix.seek_command -> int) -> (unit -> unit) -> (unit -> int) -> t
+    val create : (int -> string * int) -> (int -> Unix.seek_command -> int) -> (unit -> int) -> t
   
     (** Open a vorbis file for decoding. *)
-    val openfile : string -> t
-  
-    val openfile_with_fd : string -> t * Unix.file_descr
-  
+    val openfile : string -> t * Unix.file_descr
+    val openfile_with_fd : Unix.file_descr -> t
+ 
     (** [decode_float dec buff ofs len] decodes [len] samples in each channel and puts
       * the result in [buff] starting at position [ofs].
       * @raise Hole_in_data if there was an interruption of the data.
@@ -225,11 +223,6 @@ sig
   
     (** Same as [decode_float] but decodes to integers. *)
     val decode : t -> ?big_endian:bool -> ?sample_size:int -> ?signed:bool -> string -> int -> int -> int
-  
-    (** Close a decoder. Every decoder must be closed after use and must not be
-      * used after it is closed.
-      *)
-    val close : t -> unit
   
     (** Get the number of logical bitstreams within a physical bitstream. *)
     val streams : t -> int

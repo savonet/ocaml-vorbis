@@ -494,7 +494,6 @@ typedef struct
   int bitstream;
   value read_func;
   value seek_func;
-  value close_func;
   value tell_func;
 } myvorbis_dec_file_t;
 
@@ -504,22 +503,12 @@ static void finalize_dec_file(value _df)
 {
   myvorbis_dec_file_t *df = Decfile_val(_df);
 
-  if (df->ovf)
-  {
-    caml_enter_blocking_section();
-    ov_clear(df->ovf);
-    caml_leave_blocking_section();
-    free(df->ovf);
-    df->ovf=NULL;
-  }
-  if(df->read_func)
-  {
-    caml_remove_global_root(&df->read_func);
-    caml_remove_global_root(&df->seek_func);
-    caml_remove_global_root(&df->close_func);
-    caml_remove_global_root(&df->tell_func);
-    df->read_func=0;
-  }
+  ov_clear(df->ovf);
+  free(df->ovf);
+  df->ovf=NULL;
+  caml_remove_global_root(&df->read_func);
+  caml_remove_global_root(&df->seek_func);
+  caml_remove_global_root(&df->tell_func);
 
   free(df);
 }
@@ -579,17 +568,6 @@ static int seek_func_cb(void *datasource, ogg_int64_t offset, int whence)
   return ret;
 }
 
-static int close_func_cb(void *datasource)
-{
-  myvorbis_dec_file_t *df = datasource;
-
-  caml_leave_blocking_section();
-  caml_callback(df->close_func, Val_unit);
-  caml_enter_blocking_section();
-
-  return 0;
-}
-
 static long tell_func_cb(void *datasource)
 {
   myvorbis_dec_file_t *df = datasource;
@@ -606,13 +584,13 @@ static ov_callbacks callbacks =
 {
   .read_func = read_func_cb,
   .seek_func = seek_func_cb,
-  .close_func = close_func_cb,
+  .close_func = NULL,
   .tell_func = tell_func_cb
 };
 
-CAMLprim value ocaml_vorbis_open_dec_stream(value read_func, value seek_func, value close_func, value tell_func, value params)
+CAMLprim value ocaml_vorbis_open_dec_stream(value read_func, value seek_func, value tell_func, value params)
 {
-  CAMLparam5(read_func, seek_func, close_func, tell_func, params);
+  CAMLparam4(read_func, seek_func, tell_func, params);
   CAMLlocal1(block);
   int ret = 0;
   myvorbis_dec_file_t *df;
@@ -621,14 +599,12 @@ CAMLprim value ocaml_vorbis_open_dec_stream(value read_func, value seek_func, va
 
   df->ovf = (OggVorbis_File*)malloc(sizeof(OggVorbis_File));
   df->bitstream = 0;
-  df->read_func = read_func;
   caml_register_global_root(&df->read_func);
-  df->seek_func = seek_func;
+  df->read_func = read_func;
   caml_register_global_root(&df->seek_func);
-  df->close_func = close_func;
-  caml_register_global_root(&df->close_func);
-  df->tell_func = tell_func;
+  df->seek_func = seek_func;
   caml_register_global_root(&df->tell_func);
+  df->tell_func = tell_func;
 
   caml_enter_blocking_section();
   ret = ov_open_callbacks(df, df->ovf, NULL, 0, callbacks);
@@ -637,7 +613,6 @@ CAMLprim value ocaml_vorbis_open_dec_stream(value read_func, value seek_func, va
   if(ret < 0)
   {
     caml_remove_global_root(&df->tell_func);
-    caml_remove_global_root(&df->close_func);
     caml_remove_global_root(&df->seek_func);
     caml_remove_global_root(&df->read_func);
     free(df->ovf);
@@ -645,9 +620,7 @@ CAMLprim value ocaml_vorbis_open_dec_stream(value read_func, value seek_func, va
     raise_err(ret);
   }
 
-  block = caml_alloc_custom(&decfile_ops, sizeof(myvorbis_dec_file_t*),
-                            sizeof(myvorbis_dec_file_t)+sizeof(OggVorbis_File),
-                            1000000);
+  block = caml_alloc_custom(&decfile_ops, sizeof(myvorbis_dec_file_t*),0,1);
   Decfile_val(block) = df;
 
   CAMLreturn(block);
@@ -774,31 +747,6 @@ CAMLprim value ocaml_vorbis_decode_float_alloc(value d_f, value len_)
   }
 
   CAMLreturn(ans);
-}
-
-CAMLprim value ocaml_vorbis_close_dec_file(value d_f)
-{
-  CAMLparam1(d_f);
-  myvorbis_dec_file_t* df = Decfile_val(d_f);
-
-  if (df->ovf)
-  {
-    caml_enter_blocking_section();
-    ov_clear(df->ovf);
-    caml_leave_blocking_section();
-    free(df->ovf);
-    df->ovf=NULL;
-  }
-  if(df->read_func)
-  {
-    caml_remove_global_root(&df->read_func);
-    caml_remove_global_root(&df->seek_func);
-    caml_remove_global_root(&df->close_func);
-    caml_remove_global_root(&df->tell_func);
-    df->read_func=0;
-  }
-
-  CAMLreturn(Val_unit);
 }
 
 CAMLprim value ocaml_vorbis_get_dec_file_bitstream(value d_f)
