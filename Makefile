@@ -8,8 +8,8 @@ PROGNAME = ocaml-vorbis
 DISTFILES = aclocal.m4 bootstrap CHANGES configure configure.ac \
             COPYING Makefile README m4/*.m4 \
             src/OCamlMakefile* src/Makefile.in \
-            src/META.in src/*.ml src/*.mli src/*.c src/*.h \
-            examples/configure* examples/*Makefile* examples/*.ml 
+            src/META.in src/*.ml src/*.mli src/*.c \
+            examples/*Makefile* examples/*.ml 
 
 all:
 
