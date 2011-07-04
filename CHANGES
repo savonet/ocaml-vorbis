@@ -1,13 +1,8 @@
-0.6.0 ()
+0.6.0 (04-07-2011)
 =====
-* Changed Vorbis,File opening API
-* Fixed segfault when finalixing
-  a file decoder.
-
-0.5.2 ()
-=====
-* Check for consistency when encoding a float array.
-* Only to encode or decode an array with the same number of 
+* Changed Vorbis.File opening API
+* Fixed segfault when finalizing a file decoder.
+* Only encode or decode an array with the same number of 
   channels that the encoder/decoder requires.
 * Cleaned unused exceptions.
 * Added function to return a string representation of
