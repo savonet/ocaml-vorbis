@@ -130,13 +130,13 @@ sig
   val reset : t -> unit
 
   (** Encode a header given a list of tags. *)
-  val headerout : t -> Ogg.Stream.t -> (string * string) list -> unit
+  val headerout : ?encoder:string -> t -> Ogg.Stream.t -> (string * string) list -> unit
 
   (** Encoder a header, but do not submit packet to
     * Ogg Stream. Usefull when multiplexing ogg streams
     * since the all first packets of each streams must be packed
     * in the initial pages. *)
-  val headerout_packetout : t -> (string * string) list -> Ogg.Stream.packet*Ogg.Stream.packet*Ogg.Stream.packet
+  val headerout_packetout : ?encoder:string -> t -> (string * string) list -> Ogg.Stream.packet*Ogg.Stream.packet*Ogg.Stream.packet
 
   (** Get the number of audio channels expected by 
     * the encoder. *)
