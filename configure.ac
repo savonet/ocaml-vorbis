@@ -33,6 +33,7 @@ AC_SUBST(OCAMLOGG_INC)
 AC_SUBST(VERSION)
 
 # Finally create the Makefile and samples
+AC_CONFIG_FILES([Makefile],[chmod a-w Makefile])
 AC_CONFIG_FILES([src/Makefile],[chmod a-w src/Makefile])
 AC_CONFIG_FILES([examples/Makefile.wav2ogg],[chmod a-w examples/Makefile.wav2ogg])
 AC_CONFIG_FILES([examples/Makefile.ogg2wav],[chmod a-w examples/Makefile.ogg2wav])
