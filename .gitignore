@@ -6,9 +6,13 @@ config.log
 config.status
 config.sub
 configure
-examples/Makefile.ogg2wav
-examples/Makefile.stream2wav
-examples/Makefile.wav2ogg
 install-sh
 src/META
 src/Makefile
+src/._bcdi/
+src/._d/
+src/._ncdi/
+src/*.a
+src/*.cm*
+src/*.o
+src/*.so
