@@ -16,3 +16,6 @@ src/*.a
 src/*.cm*
 src/*.o
 src/*.so
+examples/Makefile.ogg2wav
+examples/Makefile.stream2wav
+examples/Makefile.wav2ogg
