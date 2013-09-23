@@ -152,7 +152,7 @@ struct
 
   external get_channels : t -> int = "ocaml_vorbis_encode_get_channels"
   
-  external encode_buffer_float : t -> Ogg.Stream.t -> float array array -> int -> int -> unit = "ocaml_vorbis_encode_float"
+  external encode_buffer_float : t -> Ogg.Stream.stream -> float array array -> int -> int -> unit = "ocaml_vorbis_encode_float"
 
   external time_of_granulepos : t -> Int64.t -> Nativeint.t = "ocaml_vorbis_encode_time_of_granulepos"
 
@@ -271,7 +271,7 @@ struct
 
   external check_packet : Ogg.Stream.packet -> bool = "ocaml_vorbis_check_packet"
 
-  external decode_pcm : t -> Ogg.Stream.t -> float array array -> int -> int -> int = "ocaml_vorbis_decode_pcm"
+  external decode_pcm : t -> Ogg.Stream.stream -> float array array -> int -> int -> int = "ocaml_vorbis_decode_pcm"
 
   external restart : t -> unit = "ocaml_vorbis_synthesis_restart"
   

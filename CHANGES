@@ -1,3 +1,8 @@
+0.6.2 ()
+=====
+* Changed types to match new ocaml-ogg's API. 
+  Should be fully backward compatible.
+
 0.6.1 (04-10-2011)
 =====
 * Added optional encoder field for 

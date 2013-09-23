@@ -130,7 +130,7 @@ sig
   val reset : t -> unit
 
   (** Encode a header given a list of tags. *)
-  val headerout : ?encoder:string -> t -> Ogg.Stream.t -> (string * string) list -> unit
+  val headerout : ?encoder:string -> t -> Ogg.Stream.stream -> (string * string) list -> unit
 
   (** Encoder a header, but do not submit packet to
     * Ogg Stream. Usefull when multiplexing ogg streams
@@ -145,14 +145,14 @@ sig
   (** Encode a buffer of PCM data. 
     * The PCM data array must have at least the expected
     * number of channels. Otherwise, the function raises [Invalid_channels]. *)
-  val encode_buffer_float : t -> Ogg.Stream.t -> float array array -> int -> int -> unit
+  val encode_buffer_float : t -> Ogg.Stream.stream -> float array array -> int -> int -> unit
 
   (** Convert a granulepos to absolute time in seconds. The granulepos is
     * interpreted in the context of a given encoder, and gives
     * the end time of a frame's presentation as used in Ogg mux ordering. *)
   val time_of_granulepos : t -> Int64.t -> Nativeint.t
 
-  val end_of_stream : t -> Ogg.Stream.t -> unit
+  val end_of_stream : t -> Ogg.Stream.stream -> unit
 end
 
 (** {2 Decoding} *)
@@ -180,7 +180,7 @@ sig
   (** [decode_pcm dec stream buffer pos offset] decodes pcm float data
     * from [stream]. The floats are written in [buffer], starting at
     * position [pos]. The function returns the number of samples actually written.*)
-  val decode_pcm : t -> Ogg.Stream.t -> float array array -> int -> int -> int
+  val decode_pcm : t -> Ogg.Stream.stream -> float array array -> int -> int -> int
 
   (** Restart the decoder *)
   val restart : t -> unit
