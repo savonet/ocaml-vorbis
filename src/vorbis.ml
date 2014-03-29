@@ -27,8 +27,6 @@
 
 (* $Id$ *)
 
-type encoder
-
 exception Invalid_parameters
 exception Invalid_channels
 exception Could_not_open_file
@@ -192,10 +190,6 @@ type info = {
   bitrate_lower : int;
   bitrate_window : int;
 }
-
-let opt_bs = function
-  | Some bs -> bs
-  | None -> -1
 
 module File = 
 struct
