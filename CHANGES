@@ -1,5 +1,6 @@
 0.6.2 ()
 =====
+* Switched to Bytes and uppercast_ascii APIs.
 * Changed types to match new ocaml-ogg's API. 
   Should be fully backward compatible.
 

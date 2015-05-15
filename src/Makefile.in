@@ -35,7 +35,7 @@ SOURCES = vorbis_stubs.c vorbis.mli vorbis.ml ogg_demuxer_vorbis_decoder.mli ogg
 RES_CLIB_SUF = _stubs
 RESULT = vorbis
 LIBINSTALL_FILES = $(wildcard *.mli *.cmi *.cma *.cmxa *.cmx *.a *.so)
-INCDIRS = @OCAMLOGG_INC@
+INCDIRS = @INC@ @OCAMLOGG_INC@
 ACLIBS = @LIBS@
 CLIBS = $(ACLIBS:-l%=%)
 LDFLAGS = @LDFLAGS@

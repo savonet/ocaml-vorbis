@@ -48,6 +48,28 @@ exception Utf8_failure of string
  * user compiling with ocaml < 3.11.2 *)
 let register_printer _ = ()
 
+module type StringWrapper =
+sig
+  include module type of String
+  val uppercase : string -> string
+end
+
+module StringWrapper : StringWrapper =
+struct
+  let uppercase _ = raise Not_implemented
+  let () =
+    try ignore(uppercase "") with Not_implemented -> ()
+  include String
+end
+
+module StringCompat =
+struct
+  let uppercase_ascii = StringWrapper.uppercase
+  let () =
+    try ignore(uppercase_ascii "") with Not_implemented -> ()
+  include String
+end
+
 (* Now open Printexc, 
  * overriding register_printer
  * if present *)
@@ -171,7 +193,7 @@ let split_comment comment =
       String.index_from comment 0 '='
     in
     let c1 =
-      String.uppercase (String.sub comment 0 equal_pos)
+      StringCompat.uppercase_ascii (String.sub comment 0 equal_pos)
     in
     let c2 =
       String.sub comment (equal_pos + 1) ((String.length comment) - equal_pos - 1)
@@ -203,7 +225,7 @@ struct
       try
         create
          (fun n ->
-            let buf = String.create n in
+            let buf = Bytes.create n in
             let r = Unix.read fd buf 0 n in
             buf, r)
          (fun n cmd -> Unix.lseek fd n cmd)

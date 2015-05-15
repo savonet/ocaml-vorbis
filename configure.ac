@@ -29,8 +29,13 @@ else
 fi
 AC_SUBST(OCAMLOGG_INC)
 
+# Bytes.
+AC_CHECK_OCAML_BINDING([bytes],[],[],[1])
+INC="$INC `$OCAMLFIND query bytes`"
+
 # substitutions to perform
 AC_SUBST(VERSION)
+AC_SUBST(INC)
 
 # Finally create the Makefile and samples
 AC_CONFIG_FILES([Makefile],[chmod a-w Makefile])
