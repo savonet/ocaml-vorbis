@@ -1,4 +1,4 @@
-0.6.2 ()
+0.6.2 (03-08-2015)
 =====
 * Switched to Bytes and uppercast_ascii APIs.
 * Changed types to match new ocaml-ogg's API. 
