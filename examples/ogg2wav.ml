@@ -24,8 +24,6 @@
   * @author Samuel Mimram
   *)
 
-(* $Id$ *)
-
 let bufsize = 16 * 1024
 
 let src = ref ""
@@ -95,7 +93,7 @@ let _ =
       exit 1
     );
 
-  let df = Vorbis.File.Decoder.openfile !src in
+  let df, dfd = Vorbis.File.Decoder.openfile !src in
   let infos = Vorbis.File.Decoder.info df (-1) in
   let vdr, cmt = Vorbis.File.Decoder.comments df (-1) in
   let duration = Vorbis.File.Decoder.duration df (-1) in
@@ -125,9 +123,9 @@ let _ =
                 pos := !pos + r;
                 progress_bar "Decoding ogg:" (!pos / 4) tot
             done;
-            close_out oc; Vorbis.File.Decoder.close df
+            close_out oc; Unix.close dfd
           with
-            | End_of_file -> close_out oc; Vorbis.File.Decoder.close df
+            | End_of_file -> close_out oc; Unix.close dfd
       );
       Printf.printf "\n";
 

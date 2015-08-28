@@ -24,8 +24,6 @@
   * @author Samuel Mimram, and many others...
   *)
 
-(* $Id$ *)
-
 open Vorbis
 open Unix
 
@@ -128,17 +126,30 @@ let _ =
       if input_string ic 4 <> "data" then invalid_arg "No data tag";
       (* This ensures the actual audio data will start on a new page, as per
        * spec. *)
-      output_string oc (Ogg.Stream.flush os);
+      let ph,pb = Ogg.Stream.flush_page os in
+      output_string oc (ph ^ pb);
       let buflen = !buflen in
       let buf = String.create buflen in
         begin try while true do
-          really_input ic buf 0 buflen;
-          encode buf;
-          output_string oc (Ogg.Stream.pagesout os);
+            try
+              really_input ic buf 0 buflen;
+              encode buf;
+              while true do
+                let ph,pb = Ogg.Stream.get_page os in
+                output_string oc (ph ^ pb)
+              done
+            with Ogg.Not_enough_data -> ()
         done;
         with End_of_file -> () end;
         Encoder.end_of_stream enc os;
-        output_string oc (Ogg.Stream.pagesout os);
+        begin
+          try
+            while true do
+              let ph,pb = Ogg.Stream.get_page os in
+              output_string oc (ph ^ pb)
+            done
+          with Ogg.Not_enough_data -> ()
+        end;
         close_in ic;
         close_out oc;
         Printf.printf "Finished in %.0f seconds.\n" ((Unix.time ())-.start);

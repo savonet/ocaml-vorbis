@@ -2,6 +2,7 @@ SOURCES = wav2ogg.ml
 RESULT = wav2ogg
 LIBS = unix str ogg vorbis
 INCDIRS = ../src @OCAMLOGG_INC@
+ANNOTATE=true
 
 all: nc
 
