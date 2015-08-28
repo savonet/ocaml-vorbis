@@ -6,6 +6,7 @@ addons:
     packages:
     - opam
     - libogg-dev
+    - libvorbis-dev
 
 before_install:
   - export OPAMYES=1
