@@ -1,0 +1,16 @@
+language: c
+addons:
+  apt:
+    sources:
+    - avsm
+    packages:
+    - opam
+
+before_install:
+  - export OPAMYES=1
+  - opam init
+  - opam install -q -y ocamlfind base-bytes
+  - git clone https://github.com/savonet/ocaml-ogg.git
+  - cd ocaml-ogg && ./bootstrap && ./configure && make && cd ..
+
+script: ./bootstrap && ./configure --with-ogg-dir=ocaml-ogg/src && make
