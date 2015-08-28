@@ -5,6 +5,7 @@ addons:
     - avsm
     packages:
     - opam
+    - libogg-dev
 
 before_install:
   - export OPAMYES=1
