@@ -104,7 +104,7 @@ type info = {
 }
 
 (** Create a list of vorbis tags. *)
-val tags : ?title:string -> ?artist:string -> ?genre:string -> ?date:string -> ?album:string -> ?tracknumber:string -> ?comment:string -> unit -> (string * string) list
+val tags : (string, string) Hashtbl.t -> unit -> (string * string) list
 
 (** {1 Operations with vorbis streams} *)
 

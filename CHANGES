@@ -1,3 +1,7 @@
+0.7.0 ()
+=====
+* Allow any tag.
+
 0.6.2 (03-08-2015)
 =====
 * Switched to Bytes and uppercast_ascii APIs.

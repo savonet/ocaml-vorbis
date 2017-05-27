@@ -129,20 +129,12 @@ let _ =
   Callback.register_exception "vorbis_exn_false" False;
   Callback.register_exception "vorbis_exn_utf8_failure" (Utf8_failure "")
 
-let tags ?title ?artist ?genre ?date ?album ?tracknumber ?comment () =
+let tags m () =
   let ans = ref [] in
   let add t v =
-    match v with
-      | Some v -> ans := (t, v) :: !ans
-      | None -> ()
+    ans := (t, v) :: !ans
   in
-    add "ARTIST" artist;
-    add "TITLE" title;
-    add "ALBUM" album;
-    add "GENRE" genre;
-    add "DATE" date;
-    add "TRACKNUMBER" tracknumber;
-    add "COMMENT" comment;
+    Hashtbl.iter add m;
     List.rev !ans
 
 let encoder_tag = "ocaml-vorbis by the savonet team (http://savonet.sf.net/)"
