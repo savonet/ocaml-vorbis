@@ -219,7 +219,7 @@ struct
          (fun n ->
             let buf = Bytes.create n in
             let r = Unix.read fd buf 0 n in
-            buf, r)
+            Bytes.to_string buf, r)
          (fun n cmd -> Unix.lseek fd n cmd)
          (fun () -> Unix.lseek fd 0 Unix.SEEK_CUR)
       with
