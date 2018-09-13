@@ -1,4 +1,4 @@
-name="Vorbis"
+name="vorbis"
 version="@VERSION@"
 description="Ocaml bindings to Ogg/Vorbis"
 requires="unix ogg"
