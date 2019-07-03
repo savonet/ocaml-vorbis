@@ -34,7 +34,7 @@ let dst = ref ""
 let buflen = ref 1024
 
 let input_string chan len =
-  let ans = String.create len in
+  let ans = Bytes.create len in
     (* TODO: check length *)
     ignore (input chan ans 0 len) ;
     (Bytes.unsafe_to_string ans)
@@ -90,7 +90,7 @@ let _ =
     let bits = input_short ic in
     let fos buf =
       let len = String.length buf / (2 * channels) in
-      let ans = Array.init channels (fun _ -> Array.create len 0.) in
+      let ans = Array.init channels (fun _ -> Array.make len 0.) in
         for i = 0 to len - 1 do
           for c = 0 to channels - 1 do
             let n =
@@ -129,7 +129,7 @@ let _ =
       let ph,pb = Ogg.Stream.flush_page os in
       output_string oc (ph ^ pb);
       let buflen = !buflen in
-      let buf = String.create buflen in
+      let buf = Bytes.create buflen in
         begin try while true do
             try
               really_input ic buf 0 buflen;
