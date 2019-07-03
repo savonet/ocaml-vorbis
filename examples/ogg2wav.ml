@@ -112,7 +112,7 @@ let _ =
     Printf.printf "\n";
     let tmpdst,oc = Filename.open_temp_file ~mode:[Open_binary] "ogg2wav" ".raw" in
       (
-        let buf = String.create bufsize in
+        let buf = Bytes.create bufsize in
         let pos = ref 0 in
         let tot = samples in
           try

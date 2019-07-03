@@ -37,7 +37,7 @@ let input_string chan len =
   let ans = String.create len in
     (* TODO: check length *)
     ignore (input chan ans 0 len) ;
-    ans
+    (Bytes.unsafe_to_string ans)
 
 let input_int chan =
   let buf = input_string chan 4 in
@@ -133,7 +133,7 @@ let _ =
         begin try while true do
             try
               really_input ic buf 0 buflen;
-              encode buf;
+              encode (Bytes.unsafe_to_string buf);
               while true do
                 let ph,pb = Ogg.Stream.get_page os in
                 output_string oc (ph ^ pb)
