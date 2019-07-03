@@ -204,7 +204,7 @@ struct
   
     external decode_float_alloc : t -> int -> float array array = "ocaml_vorbis_decode_float_alloc"
   
-    external decode : t -> bool -> int -> bool -> string -> int -> int -> int = "ocaml_vorbis_decode_byte" "ocaml_vorbis_decode"
+    external decode : t -> bool -> int -> bool -> bytes -> int -> int -> int = "ocaml_vorbis_decode_byte" "ocaml_vorbis_decode"
   
     let decode df ?(big_endian=false) ?(sample_size=2) ?(signed=true) buf ofs len =
       decode df big_endian sample_size signed buf ofs len

@@ -1,3 +1,7 @@
+0.7.2 (unreleased)
+=====
+* Use `bytes` instead of `string` in `File.Decoder.decode`.
+
 0.7.1 (08-29-2018)
 =====
 * Fix compilation with OCaml >= 4.06

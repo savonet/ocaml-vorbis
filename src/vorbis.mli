@@ -222,7 +222,7 @@ sig
     val decode_float_alloc : t -> int -> float array array
   
     (** Same as [decode_float] but decodes to integers. *)
-    val decode : t -> ?big_endian:bool -> ?sample_size:int -> ?signed:bool -> string -> int -> int -> int
+    val decode : t -> ?big_endian:bool -> ?sample_size:int -> ?signed:bool -> bytes -> int -> int -> int
   
     (** Get the number of logical bitstreams within a physical bitstream. *)
     val streams : t -> int
