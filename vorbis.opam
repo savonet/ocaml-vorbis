@@ -1,26 +1,30 @@
 opam-version: "2.0"
-version: "dev"
+name: "vorbis"
+version: "0.7.2"
 maintainer: "Romain Beauxis <toots@rastageeks.org>"
 authors: "The Savonet Team <savonet-users@lists.sourceforge.net>"
 homepage: "https://github.com/savonet/ocaml-vorbis"
 bug-reports: "https://github.com/savonet/ocaml-vorbis/issues"
-depends: ["ocaml" "ocamlfind" "ogg"]
-flags: light-uninstall
+synopsis: "Bindings to libvorbis"
+depends: [
+  "ocaml"
+  "ocamlfind" {build}
+  "ogg"
+]
 build: [
-  ["./bootstrap"]
+  ["./bootstrap"] {pinned}
   ["./configure" "--prefix" prefix]
-  [make "clean"]
+  [make "clean"] {pinned}
   [make]
 ]
 install: [make "install"]
-remove: ["ocamlfind" "remove" "vorbis"]
 depexts: [
   ["libvorbis-dev"] {os-distribution = "alpine"}
   ["libvorbis-devel"] {os-distribution = "centos"}
   ["libvorbis-devel"] {os-distribution = "fedora"}
-  ["libvorbis-devel"] {os-distribution = "opensuse"}
-  ["libvorbis-dev"] {os-distribution = "debian"}
-  ["libvorbis-dev"] {os-distribution = "ubuntu"}
+  ["libvorbis-devel"] {os-family = "suse"}
+  ["pkg-config" "libvorbis-dev"] {os-distribution = "debian"}
+  ["pkg-config" "libvorbis-dev"] {os-distribution = "ubuntu"}
   ["libvorbis"] {os = "macos" & os-distribution = "homebrew"}
 ]
 dev-repo: "git+https://github.com/savonet/ocaml-vorbis.git"
