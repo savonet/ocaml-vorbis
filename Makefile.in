@@ -1,16 +1,14 @@
 # OCaml-Vorbis
 #
 # Copyright (c) 2003 by the Savonet team
-#
-# $Id$
 
 PROGNAME = ocaml-vorbis
 DISTFILES = @AUTOCONF_INSTALL_FILES@ \
-			aclocal.m4 bootstrap CHANGES configure configure.ac \
-            COPYING Makefile.in README \
-            src/OCamlMakefile* src/Makefile.in \
-            src/META.in src/*.ml src/*.mli src/*.c \
-            examples/*Makefile* examples/*.ml 
+	aclocal.m4 bootstrap CHANGES configure configure.ac \
+	COPYING Makefile.in README \
+	src/OCamlMakefile* src/Makefile.in \
+	src/META.in src/*.ml src/*.mli src/*.c \
+	examples/*Makefile* examples/*.ml
 
 all:
 
@@ -27,6 +25,9 @@ doc:
 examples:
 	$(MAKE) -C examples
 
+test:
+	$(MAKE) -C examples $@
+
 clean:
 	-$(MAKE) -C src clean
 	-$(MAKE) -C examples clean
@@ -34,7 +35,6 @@ clean:
 distclean: clean
 	rm -rf autom4te.cache config.log config.status src/META src/Makefile
 	rm -rf doc
-	-$(MAKE) -C examples distclean
 
 dist: doc
 	VERSION="$(shell grep 'AC_INIT' configure.ac)"; \

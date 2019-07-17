@@ -123,7 +123,18 @@ let _ =
         "Encoding to: OGG %d channels, %d Hz, %d kbps\nPlease wait...\n%!"
         channels infreq !bitrate;
       Encoder.headerout enc os ["ARTIST", "test"];
-      if input_string ic 4 <> "data" then invalid_arg "No data tag";
+      (* skip headers *)
+      let rec aux () =
+        let tag = input_string ic 4 in
+        match tag with
+        | "LIST" ->
+           let n = input_int ic in
+           let _ = input_string ic n in
+           aux ()
+        | "data" -> ()
+        | _ -> invalid_arg "No data tag"
+      in
+      aux ();
       (* This ensures the actual audio data will start on a new page, as per
        * spec. *)
       let ph,pb = Ogg.Stream.flush_page os in
