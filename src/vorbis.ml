@@ -154,7 +154,7 @@ let split_comment comment =
       String.index_from comment 0 '='
     in
     let c1 =
-      String.uppercase_ascii (String.sub comment 0 equal_pos)
+      String.uppercase (String.sub comment 0 equal_pos)
     in
     let c2 =
       String.sub comment (equal_pos + 1) ((String.length comment) - equal_pos - 1)
