@@ -45,6 +45,10 @@
 
 #include <ocaml-ogg.h>
 
+#ifndef Bytes_val
+#define Bytes_val String_val
+#endif
+
 static void raise_err(int ret)
 {
   switch(ret)
@@ -662,7 +666,7 @@ CAMLprim value ocaml_vorbis_decode(value d_f, value be_, value ss_, value signed
     free(buf);
     ret?raise_err(ret):caml_raise_end_of_file();
   }
-  memcpy(String_val(buf_) + ofs, buf, ret);
+  memcpy(Bytes_val(buf_) + ofs, buf, ret);
   free(buf);
 
   CAMLreturn(Val_int(ret));

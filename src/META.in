@@ -1,6 +1,0 @@
-name="vorbis"
-version="@VERSION@"
-description="Ocaml bindings to Ogg/Vorbis"
-requires="unix ogg"
-archive(byte) = "vorbis.cma"
-archive(native) = "vorbis.cmxa"
