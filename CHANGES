@@ -1,6 +1,7 @@
-0.7.2 (unreleased)
+0.8.0 (08-03-2021)
 =====
 * Use `bytes` instead of `string` in `File.Decoder.decode`.
+* Switch to `dune`
 
 0.7.1 (08-29-2018)
 =====

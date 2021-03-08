@@ -94,9 +94,9 @@ type bitstream = int
 
 (** Vorbis informations about a file. *)
 type info = {
-  vorbis_version : int; (** version of vorbis codec, must be 0 *)
-  audio_channels : int; (** number of audio channels *)
-  audio_samplerate : int; (** samplerate in Hertz *)
+  vorbis_version : int;  (** version of vorbis codec, must be 0 *)
+  audio_channels : int;  (** number of audio channels *)
+  audio_samplerate : int;  (** samplerate in Hertz *)
   bitrate_upper : int;
   bitrate_nominal : int;
   bitrate_lower : int;
@@ -110,8 +110,7 @@ val tags : (string, string) Hashtbl.t -> unit -> (string * string) list
 
 (** {2 Encoding} *)
 
-module Encoder :
-sig
+module Encoder : sig
   (** Internal state of an encoder. *)
   type t
 
@@ -130,13 +129,18 @@ sig
   val reset : t -> unit
 
   (** Encode a header given a list of tags. *)
-  val headerout : ?encoder:string -> t -> Ogg.Stream.stream -> (string * string) list -> unit
+  val headerout :
+    ?encoder:string -> t -> Ogg.Stream.stream -> (string * string) list -> unit
 
   (** Encoder a header, but do not submit packet to
     * Ogg Stream. Usefull when multiplexing ogg streams
     * since the all first packets of each streams must be packed
     * in the initial pages. *)
-  val headerout_packetout : ?encoder:string -> t -> (string * string) list -> Ogg.Stream.packet*Ogg.Stream.packet*Ogg.Stream.packet
+  val headerout_packetout :
+    ?encoder:string ->
+    t ->
+    (string * string) list ->
+    Ogg.Stream.packet * Ogg.Stream.packet * Ogg.Stream.packet
 
   (** Get the number of audio channels expected by 
     * the encoder. *)
@@ -145,7 +149,8 @@ sig
   (** Encode a buffer of PCM data. 
     * The PCM data array must have at least the expected
     * number of channels. Otherwise, the function raises [Invalid_channels]. *)
-  val encode_buffer_float : t -> Ogg.Stream.stream -> float array array -> int -> int -> unit
+  val encode_buffer_float :
+    t -> Ogg.Stream.stream -> float array array -> int -> int -> unit
 
   (** Convert a granulepos to absolute time in seconds. The granulepos is
     * interpreted in the context of a given encoder, and gives
@@ -157,9 +162,7 @@ end
 
 (** {2 Decoding} *)
 
-module Decoder :
-sig
-
+module Decoder : sig
   (** Internal decoder state *)
   type t
 
@@ -171,7 +174,7 @@ sig
   val info : t -> info
 
   (** Get vorbis comments from the decoder *)
-  val comments : t -> string * ((string * string) list)
+  val comments : t -> string * (string * string) list
 
   (** Check wether a ogg packet contains vorbis data.
     * Usefull for parsing ogg containers with multiple streams. *)
@@ -180,24 +183,22 @@ sig
   (** [decode_pcm dec stream buffer pos offset] decodes pcm float data
     * from [stream]. The floats are written in [buffer], starting at
     * position [pos]. The function returns the number of samples actually written.*)
-  val decode_pcm : t -> Ogg.Stream.stream -> float array array -> int -> int -> int
+  val decode_pcm :
+    t -> Ogg.Stream.stream -> float array array -> int -> int -> int
 
   (** Restart the decoder *)
   val restart : t -> unit
-
 end
 
 (** {1 Operations with vorbis files} *)
 
 (** {2 Decoding} *)
 
-module File :
-sig
-  module Decoder : 
-  sig
+module File : sig
+  module Decoder : sig
     (** Internal state of a decoder. *)
     type t
-  
+
     (** [create read_func seek_func tell_func params] opens a
       * stream like [openfile] for decoding but callbacks are used to
       * manipulate the data. [read_func] should return the requested amount of bytes
@@ -206,61 +207,71 @@ sig
       * offset or -1 if there is no notion of offset in the stream. 
       * Raises: [Read_error], [Not_vorbis], [Version_mismatch], [Bad_header], [Internal_fault].
       *)
-    val create : (int -> string * int) -> (int -> Unix.seek_command -> int) -> (unit -> int) -> t
-  
+    val create :
+      (int -> string * int) ->
+      (int -> Unix.seek_command -> int) ->
+      (unit -> int) ->
+      t
+
     (** Open a vorbis file for decoding. *)
     val openfile : string -> t * Unix.file_descr
+
     val openfile_with_fd : Unix.file_descr -> t
- 
+
     (** [decode_float dec buff ofs len] decodes [len] samples in each channel and puts
       * the result in [buff] starting at position [ofs].
       * @raise Hole_in_data if there was an interruption of the data.
       * @raise Invalid_parameters if all the data cannot fit in the buffer starting at the given position.
       *)
     val decode_float : t -> float array array -> int -> int -> int
-  
+
     val decode_float_alloc : t -> int -> float array array
-  
+
     (** Same as [decode_float] but decodes to integers. *)
-    val decode : t -> ?big_endian:bool -> ?sample_size:int -> ?signed:bool -> bytes -> int -> int -> int
-  
+    val decode :
+      t ->
+      ?big_endian:bool ->
+      ?sample_size:int ->
+      ?signed:bool ->
+      bytes ->
+      int ->
+      int ->
+      int
+
     (** Get the number of logical bitstreams within a physical bitstream. *)
     val streams : t -> int
-  
+
     (** Get the index of the sequential logical bitstream currently being decoded
       * (incremented at chaining boundaries even for non-seekable streams). For
       * seekable streams, it represents the actual chaining index within the
       * physical bitstream.
       *)
     val bitstream : t -> bitstream
-  
+
     (** Get the vorbis comments from a vorbis file. The second argument is the
       * number of the logical bitstream (the current bitstream is used if it is set
       * to [None]).
       *)
-    val comments : t -> bitstream -> string * ((string * string) list)
-  
+    val comments : t -> bitstream -> string * (string * string) list
+
     (** Get the vorbis information from the stream header of a bitstream. *)
     val info : t -> bitstream -> info
-  
+
     (** Get the bitrate of a bitsream (in bps). *)
     val bitrate : t -> bitstream -> int
-  
+
     (** Get the total pcm samples of a bitstream. *)
     val samples : t -> bitstream -> int
-  
+
     (** Get the duration in seconds of a bitstream. *)
     val duration : t -> bitstream -> float
-  
+
     (** Get the serial number of a bitstream. *)
     val serialnumber : t -> bitstream -> int
-
   end
 end
 
-module Skeleton : 
-sig
-
+module Skeleton : sig
   (** Generate a vorbis fisbone packet with 
     * these parameters, to use in an ogg skeleton.
     * Default value for [start_granule] is [Int64.zero],
@@ -270,6 +281,8 @@ sig
   val fisbone :
     ?start_granule:Int64.t ->
     ?headers:(string * string) list ->
-    serialno:Nativeint.t -> samplerate:Int64.t -> unit -> Ogg.Stream.packet
-
+    serialno:Nativeint.t ->
+    samplerate:Int64.t ->
+    unit ->
+    Ogg.Stream.packet
 end
