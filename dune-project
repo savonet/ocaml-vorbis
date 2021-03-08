@@ -14,6 +14,7 @@
  (depends
   conf-libvorbis
   conf-pkg-config
+  (ocaml (>= 4.03.0))
   (dune (>= 2.0))
   dune-configurator
   (ogg (>= 0.7.0)))
