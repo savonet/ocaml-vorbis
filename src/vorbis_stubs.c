@@ -906,7 +906,7 @@ CAMLprim value ocaml_vorbis_decode_float_alloc_ba(value d_f, value len_) {
 
   ans = caml_alloc_tuple(chans);
   for (c = 0; c < chans; c++) {
-    ansc = caml_ba_alloc_dims(CAML_BA_FLOAT32 | CAML_BA_C_LAYOUT, 1, NULL, len);
+    ansc = caml_ba_alloc_dims(CAML_BA_FLOAT32 | CAML_BA_C_LAYOUT, 1, NULL, ret);
     Store_field(ans, c, ansc);
     for (i = 0; i < ret; i++)
       ((float *)Caml_ba_data_val(ansc))[i] = buf[c][i];

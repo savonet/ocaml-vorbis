@@ -49,6 +49,7 @@ let input_short chan =
 
 let bitrate = ref 128000
 let usage = "usage: wav2ogg [options] source destination"
+let use_ba = ref false
 
 let _ =
   Arg.parse
@@ -59,6 +60,7 @@ let _ =
       ( "--buflen",
         Arg.Int (fun i -> buflen := i),
         "Size of chunks successively encoded" );
+      ("-ba", Arg.Set use_ba, "Use big arrays");
     ]
     (let pnum = ref (-1) in
      fun s ->
@@ -109,11 +111,38 @@ let _ =
     done;
     ans
   in
+  let baos buf =
+    let len = String.length buf / (2 * channels) in
+    let ans =
+      Array.init channels (fun _ ->
+          Bigarray.Array1.create Bigarray.float32 Bigarray.c_layout len)
+    in
+    for i = 0 to len - 1 do
+      for c = 0 to channels - 1 do
+        let n =
+          int_of_char buf.[(2 * channels * i) + (2 * c)]
+          + (int_of_char buf.[(2 * channels * i) + (2 * c) + 1] lsl 8)
+        in
+        let n =
+          if n land (1 lsl 15) = 0 then n
+          else (n land 0b111111111111111) - 32768
+        in
+        ans.(c).{i} <- float n /. 32768.;
+        ans.(c).{i} <- max (-1.) (min 1. ans.(c).{i})
+      done
+    done;
+    ans
+  in
   let enc = Encoder.create channels infreq (-1) !bitrate (-1) in
   let os = Ogg.Stream.create () in
   let encode buf =
-    let fbuf = fos buf in
-    Encoder.encode_buffer_float enc os fbuf 0 (Array.length fbuf.(0))
+    if !use_ba then (
+      let fbuf = baos buf in
+      Encoder.encode_buffer_float_ba enc os fbuf 0
+        (Bigarray.Array1.dim fbuf.(0)))
+    else (
+      let fbuf = fos buf in
+      Encoder.encode_buffer_float enc os fbuf 0 (Array.length fbuf.(0)))
   in
   let start = Unix.time () in
   Printf.printf "Input detected: PCM WAVE %d channels, %d Hz, %d bits\n%!"

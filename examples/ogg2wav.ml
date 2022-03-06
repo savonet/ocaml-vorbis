@@ -73,8 +73,10 @@ let use_alloc = ref false
 
 let _ =
   Arg.parse
-    [("-ba", Arg.Set use_ba, "Use big arrays");
-     ("-alloc", Arg.Set use_alloc, "Use alloc API")]
+    [
+      ("-ba", Arg.Set use_ba, "Use big arrays");
+      ("-alloc", Arg.Set use_alloc, "Use alloc API");
+    ]
     (let pnum = ref (-1) in
      fun s ->
        incr pnum;
@@ -98,8 +100,8 @@ let _ =
   Printf.printf
     "Input file characteristics: vorbis codec v%d, %d channels, %d Hz, %.02f \
      s, %d samples\n"
-    infos.Vorbis.vorbis_version chans
-    infos.Vorbis.audio_samplerate duration samples;
+    infos.Vorbis.vorbis_version chans infos.Vorbis.audio_samplerate duration
+    samples;
   Printf.printf "* vendor: %s\n" vdr;
   List.iter
     (fun (c, v) -> Printf.printf "* %s: %s\n" (String.lowercase_ascii c) v)
@@ -112,7 +114,7 @@ let _ =
   in
   (let decode =
      if !use_ba then (
-       let process len buf = 
+       let process len buf =
          for i = 0 to len - 1 do
            for c = 0 to chans - 1 do
              let s = int_of_float (buf.(c).{i} *. 32767.) in
@@ -120,18 +122,21 @@ let _ =
            done
          done;
          len
-        in
-        if !use_alloc then (fun () ->
-           if chans = 0 then 0 else (
-           let buf = Vorbis.File.Decoder.decode_float_alloc_ba df bufsize in
-           process (Bigarray.Array1.dim buf.(0)) buf))
+       in
+       if !use_alloc then fun () ->
+         if chans = 0 then 0
          else (
-           let buf = Array.init chans (fun _ -> Bigarray.Array1.create Bigarray.float32 Bigarray.c_layout bufsize) in
-           fun () ->
-              let len = Vorbis.File.Decoder.decode_float_ba df buf 0 bufsize in
-              process len buf
-         )
-     ) else (
+           let buf = Vorbis.File.Decoder.decode_float_alloc_ba df bufsize in
+           process (Bigarray.Array1.dim buf.(0)) buf)
+       else (
+         let buf =
+           Array.init chans (fun _ ->
+               Bigarray.Array1.create Bigarray.float32 Bigarray.c_layout bufsize)
+         in
+         fun () ->
+           let len = Vorbis.File.Decoder.decode_float_ba df buf 0 bufsize in
+           process len buf))
+     else (
        let buf = Bytes.create (16 * bufsize) in
        fun () ->
          let r = Vorbis.File.Decoder.decode df buf 0 bufsize in

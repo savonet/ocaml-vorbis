@@ -1,0 +1,25 @@
+(executable
+ (name test)
+ (modules test))
+
+(executable
+ (name gen_wav)
+ (modules gen_wav))
+
+(rule
+ (alias runtest)
+ (package vorbis)
+ (deps
+  (:test ./test.exe)
+  (:gen_wav ./gen_wav.exe)
+  (:ogg2wav ../examples/ogg2wav.exe)
+  (:wav2ogg ../examples/wav2ogg.exe))
+ (action
+  (progn
+   (run %{gen_wav})
+   (run %{wav2ogg} gen.wav output.ogg)
+   (run %{wav2ogg} -ba gen.wav output-ba.ogg)
+   (run %{ogg2wav} output.ogg output.wav)
+   (run %{ogg2wav} -ba output-ba.ogg output-ba.wav)
+   (run %{ogg2wav} -ba -alloc output-ba.ogg output-ba-alloc.wav)
+   (run %{test} output-ba.wav output-ba-alloc.wav))))
