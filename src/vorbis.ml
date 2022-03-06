@@ -150,6 +150,14 @@ module Encoder = struct
     t -> Ogg.Stream.stream -> float array array -> int -> int -> unit
     = "ocaml_vorbis_encode_float"
 
+  external encode_buffer_float_ba :
+    t ->
+    Ogg.Stream.stream ->
+    (float, Bigarray.float32_elt, Bigarray.c_layout) Bigarray.Array1.t array ->
+    int ->
+    int ->
+    unit = "ocaml_vorbis_encode_float_ba"
+
   external time_of_granulepos : t -> Int64.t -> Nativeint.t
     = "ocaml_vorbis_encode_time_of_granulepos"
 

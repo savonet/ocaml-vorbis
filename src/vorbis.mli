@@ -152,6 +152,14 @@ module Encoder : sig
   val encode_buffer_float :
     t -> Ogg.Stream.stream -> float array array -> int -> int -> unit
 
+  val encode_buffer_float_ba :
+    t ->
+    Ogg.Stream.stream ->
+    (float, Bigarray.float32_elt, Bigarray.c_layout) Bigarray.Array1.t array ->
+    int ->
+    int ->
+    unit
+
   (** Convert a granulepos to absolute time in seconds. The granulepos is
     * interpreted in the context of a given encoder, and gives
     * the end time of a frame's presentation as used in Ogg mux ordering. *)

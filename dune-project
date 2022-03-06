@@ -1,5 +1,5 @@
-(lang dune 2.0)
-(version 0.8.0)
+(lang dune 2.8)
+(version 0.8.1)
 (name vorbis)
 (source (github savonet/ocaml-vorbis))
 (license GPL-2.0)
@@ -7,6 +7,7 @@
 (maintainers "The Savonet Team <savonet-users@lists.sourceforge.net>")
 
 (generate_opam_files true)
+(use_standard_c_and_cxx_flags false)
 
 (package
  (name vorbis)
@@ -15,7 +16,7 @@
   conf-libvorbis
   conf-pkg-config
   (ocaml (>= 4.03.0))
-  (dune (>= 2.0))
+  dune
   dune-configurator
   (ogg (>= 0.7.0)))
 )

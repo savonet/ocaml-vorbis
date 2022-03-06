@@ -26,6 +26,7 @@
 
 #define CAML_NAME_SPACE
 #include <caml/alloc.h>
+#include <caml/bigarray.h>
 #include <caml/callback.h>
 #include <caml/custom.h>
 #include <caml/fail.h>
@@ -34,14 +35,14 @@
 #include <caml/mlvalues.h>
 #include <caml/signals.h>
 
-#include <vorbis/vorbisfile.h>
-#include <vorbis/vorbisenc.h>
 #include <vorbis/codec.h>
+#include <vorbis/vorbisenc.h>
+#include <vorbis/vorbisfile.h>
 
-#include <string.h>
-#include <stdio.h>
-#include <time.h>
 #include <assert.h>
+#include <stdio.h>
+#include <string.h>
+#include <time.h>
 
 #include <ocaml-ogg.h>
 
@@ -49,66 +50,63 @@
 #define Bytes_val String_val
 #endif
 
-static void raise_err(int ret)
-{
-  switch(ret)
-  {
-    case OV_FALSE:
-      caml_raise_constant(*caml_named_value("vorbis_exn_false"));
+static void raise_err(int ret) {
+  switch (ret) {
+  case OV_FALSE:
+    caml_raise_constant(*caml_named_value("vorbis_exn_false"));
 
-    case OV_HOLE:
-      caml_raise_constant(*caml_named_value("vorbis_exn_hole_in_data"));
+  case OV_HOLE:
+    caml_raise_constant(*caml_named_value("vorbis_exn_hole_in_data"));
 
-    case OV_EREAD:
-      caml_raise_constant(*caml_named_value("vorbis_exn_read_error"));
+  case OV_EREAD:
+    caml_raise_constant(*caml_named_value("vorbis_exn_read_error"));
 
-    case OV_EFAULT:
-      caml_raise_constant(*caml_named_value("vorbis_exn_internal_fault"));
+  case OV_EFAULT:
+    caml_raise_constant(*caml_named_value("vorbis_exn_internal_fault"));
 
-    case OV_ENOTVORBIS:
-      caml_raise_constant(*caml_named_value("vorbis_exn_not_vorbis"));
+  case OV_ENOTVORBIS:
+    caml_raise_constant(*caml_named_value("vorbis_exn_not_vorbis"));
 
-    case OV_EBADHEADER:
-      caml_raise_constant(*caml_named_value("vorbis_exn_bad_header"));
+  case OV_EBADHEADER:
+    caml_raise_constant(*caml_named_value("vorbis_exn_bad_header"));
 
-    case OV_EVERSION:
-      caml_raise_constant(*caml_named_value("vorbis_exn_version_mismatch"));
+  case OV_EVERSION:
+    caml_raise_constant(*caml_named_value("vorbis_exn_version_mismatch"));
 
-    case OV_EBADLINK:
-      caml_raise_constant(*caml_named_value("vorbis_exn_bad_link"));
+  case OV_EBADLINK:
+    caml_raise_constant(*caml_named_value("vorbis_exn_bad_link"));
 
-    case OV_EINVAL:
-      caml_raise_constant(*caml_named_value("vorbis_exn_invalid"));
+  case OV_EINVAL:
+    caml_raise_constant(*caml_named_value("vorbis_exn_invalid"));
 
-    case OV_EIMPL:
-      caml_raise_constant(*caml_named_value("vorbis_exn_not_implemented"));
+  case OV_EIMPL:
+    caml_raise_constant(*caml_named_value("vorbis_exn_not_implemented"));
 
-    case OV_ENOTAUDIO:
-      caml_raise_constant(*caml_named_value("vorbis_exn_not_audio"));
+  case OV_ENOTAUDIO:
+    caml_raise_constant(*caml_named_value("vorbis_exn_not_audio"));
 
-    default:
-      caml_raise_with_arg(*caml_named_value("vorbis_exn_unknown_error"), Val_int(ret));
+  default:
+    caml_raise_with_arg(*caml_named_value("vorbis_exn_unknown_error"),
+                        Val_int(ret));
   }
 }
 
 /**** Decoding *****/
 
-typedef struct
-{
+typedef struct {
   vorbis_dsp_state vd;
   vorbis_block vb;
   vorbis_info vi;
   vorbis_comment vc;
 } decoder_t;
 
-#define Decoder_val(v) (*((decoder_t**)Data_custom_val(v)))
+#define Decoder_val(v) (*((decoder_t **)Data_custom_val(v)))
 #define Decoder_dsp_state_val(v) (&Decoder_val(v)->vd)
 #define Decoder_info_val(v) (&Decoder_val(v)->vi)
 #define Comment_val(v) (&Decoder_val(v)->vc)
 #define Block_val(v) (&Decoder_val(v)->vb)
 
-static void finalize_decoder(value e)
-{
+static void finalize_decoder(value e) {
   decoder_t *dec = Decoder_val(e);
 
   vorbis_block_clear(&dec->vb);
@@ -118,37 +116,29 @@ static void finalize_decoder(value e)
   free(dec);
 }
 
-static struct custom_operations decoder_ops =
-{
-  "ocaml_decoder_t",
-  finalize_decoder,
-  custom_compare_default,
-  custom_hash_default,
-  custom_serialize_default,
-  custom_deserialize_default
-};
+static struct custom_operations decoder_ops = {
+    "ocaml_decoder_t",   finalize_decoder,         custom_compare_default,
+    custom_hash_default, custom_serialize_default, custom_deserialize_default};
 
-CAMLprim value ocaml_vorbis_val_info_of_decoder(value vorbis_t)
-{
+CAMLprim value ocaml_vorbis_val_info_of_decoder(value vorbis_t) {
   CAMLparam1(vorbis_t);
-  CAMLlocal1 (v);
+  CAMLlocal1(v);
   int i = 0;
   v = caml_alloc_tuple(7);
   vorbis_info *vi = Decoder_info_val(vorbis_t);
 
-  Store_field (v, i++, Val_int(vi->version));
-  Store_field (v, i++, Val_int(vi->channels));
-  Store_field (v, i++, Val_long(vi->rate));
-  Store_field (v, i++, Val_long(vi->bitrate_upper));
-  Store_field (v, i++, Val_long(vi->bitrate_nominal));
-  Store_field (v, i++, Val_long(vi->bitrate_lower));
-  Store_field (v, i++, Val_long(vi->bitrate_window));
+  Store_field(v, i++, Val_int(vi->version));
+  Store_field(v, i++, Val_int(vi->channels));
+  Store_field(v, i++, Val_long(vi->rate));
+  Store_field(v, i++, Val_long(vi->bitrate_upper));
+  Store_field(v, i++, Val_long(vi->bitrate_nominal));
+  Store_field(v, i++, Val_long(vi->bitrate_lower));
+  Store_field(v, i++, Val_long(vi->bitrate_window));
 
   CAMLreturn(v);
 }
 
-CAMLprim value ocaml_vorbis_val_comments_of_decoder(value decoder)
-{
+CAMLprim value ocaml_vorbis_val_comments_of_decoder(value decoder) {
   CAMLparam1(decoder);
   CAMLlocal2(ans, cmts);
 
@@ -168,8 +158,7 @@ CAMLprim value ocaml_vorbis_val_comments_of_decoder(value decoder)
   CAMLreturn(ans);
 }
 
-CAMLprim value ocaml_vorbis_check_packet(value packet)
-{
+CAMLprim value ocaml_vorbis_check_packet(value packet) {
   CAMLparam1(packet);
   ogg_packet *op = Packet_val(packet);
   vorbis_info vi;
@@ -177,16 +166,16 @@ CAMLprim value ocaml_vorbis_check_packet(value packet)
   vorbis_info_init(&vi);
   vorbis_comment_init(&vc);
   int ret = 1;
-  if(vorbis_synthesis_headerin(&vi, &vc, op) < 0)
+  if (vorbis_synthesis_headerin(&vi, &vc, op) < 0)
     ret = 0;
   vorbis_info_clear(&vi);
   vorbis_comment_clear(&vc);
   CAMLreturn(Val_int(ret));
 }
 
-CAMLprim value ocaml_vorbis_synthesis_init(value packet, value packet2, value packet3)
-{
-  CAMLparam3(packet,packet2,packet3);
+CAMLprim value ocaml_vorbis_synthesis_init(value packet, value packet2,
+                                           value packet3) {
+  CAMLparam3(packet, packet2, packet3);
   CAMLlocal1(ans);
   ogg_packet *op = Packet_val(packet);
   ogg_packet *op2 = Packet_val(packet2);
@@ -201,24 +190,21 @@ CAMLprim value ocaml_vorbis_synthesis_init(value packet, value packet2, value pa
   vorbis_comment_init(&vt->vc);
 
   ret = vorbis_synthesis_headerin(&vt->vi, &vt->vc, op);
-  if(ret < 0)
-  {
+  if (ret < 0) {
     vorbis_info_clear(&vt->vi);
     vorbis_comment_clear(&vt->vc);
     free(vt);
     raise_err(ret);
   }
   ret = vorbis_synthesis_headerin(&vt->vi, &vt->vc, op2);
-  if(ret < 0)
-  {
+  if (ret < 0) {
     vorbis_info_clear(&vt->vi);
     vorbis_comment_clear(&vt->vc);
     free(vt);
     raise_err(ret);
   }
   ret = vorbis_synthesis_headerin(&vt->vi, &vt->vc, op3);
-  if (ret < 0)
-  {
+  if (ret < 0) {
     vorbis_info_clear(&vt->vi);
     vorbis_comment_clear(&vt->vc);
     free(vt);
@@ -226,18 +212,18 @@ CAMLprim value ocaml_vorbis_synthesis_init(value packet, value packet2, value pa
   }
 
   vorbis_synthesis_init(&vt->vd, &vt->vi);
-  vorbis_block_init(&vt->vd,&vt->vb);
-  
-  ans = caml_alloc_custom(&decoder_ops, sizeof(decoder_t*), 1, 0);
+  vorbis_block_init(&vt->vd, &vt->vb);
+
+  ans = caml_alloc_custom(&decoder_ops, sizeof(decoder_t *), 1, 0);
   Decoder_val(ans) = vt;
 
   CAMLreturn(ans);
 }
 
-CAMLprim value ocaml_vorbis_decode_pcm(value vorbis_state, value stream_state, value buf, value _pos, value _len)
-{
-  CAMLparam3(vorbis_state,stream_state,buf);
-  CAMLlocal2(buffer,chan);
+CAMLprim value ocaml_vorbis_decode_pcm(value vorbis_state, value stream_state,
+                                       value buf, value _pos, value _len) {
+  CAMLparam3(vorbis_state, stream_state, buf);
+  CAMLlocal2(buffer, chan);
   ogg_stream_state *os = Stream_state_val(stream_state);
   ogg_packet op;
   vorbis_block *vb = Block_val(vorbis_state);
@@ -247,12 +233,12 @@ CAMLprim value ocaml_vorbis_decode_pcm(value vorbis_state, value stream_state, v
   int len = Int_val(_len);
   float **pcm;
   int samples;
-  int i,j,ret;
+  int i, j, ret;
   int total_samples = 0;
- 
-  while (1) { 
+
+  while (1) {
     while (total_samples < len) {
-      samples = vorbis_synthesis_pcmout(vd,&pcm);
+      samples = vorbis_synthesis_pcmout(vd, &pcm);
       if (samples < 0)
         raise_err(samples);
       if (samples == 0)
@@ -261,35 +247,33 @@ CAMLprim value ocaml_vorbis_decode_pcm(value vorbis_state, value stream_state, v
         samples = len - total_samples;
       if (Wosize_val(buf) != vi->channels)
         caml_raise_constant(*caml_named_value("vorbis_exn_invalid_channels"));
-      for (i=0 ; i<vi->channels ; i++)
-      {
-        chan = Field(buf,i);
+      for (i = 0; i < vi->channels; i++) {
+        chan = Field(buf, i);
         if (Wosize_val(chan) / Double_wosize - pos < samples)
           caml_raise_constant(*caml_named_value("vorbis_exn_invalid"));
-        for (j=0; j<samples; j++)
-          Store_double_field(chan,pos+j,pcm[i][j]);
+        for (j = 0; j < samples; j++)
+          Store_double_field(chan, pos + j, pcm[i][j]);
       }
       pos += samples;
       total_samples += samples;
-      ret = vorbis_synthesis_read(vd,samples);
+      ret = vorbis_synthesis_read(vd, samples);
       if (ret < 0)
         raise_err(ret);
     }
     if (total_samples == len)
       CAMLreturn(Val_int(total_samples));
 
-    ret = ogg_stream_packetout(os,&op);
+    ret = ogg_stream_packetout(os, &op);
     /* returned values are:
      * 1: ok
      * 0: not enough data. in this case
      *    we return the number of samples
-     *    decoded if > 0 and raise 
+     *    decoded if > 0 and raise
      *    Ogg_not_enough_data otherwise
      * -1: out of sync */
-    if (ret == 0)
-    {
+    if (ret == 0) {
       if (total_samples > 0)
-        CAMLreturn(Val_int(total_samples)); 
+        CAMLreturn(Val_int(total_samples));
       else
         caml_raise_constant(*caml_named_value("ogg_exn_not_enough_data"));
     }
@@ -297,11 +281,11 @@ CAMLprim value ocaml_vorbis_decode_pcm(value vorbis_state, value stream_state, v
       caml_raise_constant(*caml_named_value("ogg_exn_out_of_sync"));
 
     caml_enter_blocking_section();
-    ret = vorbis_synthesis(vb,&op);
+    ret = vorbis_synthesis(vb, &op);
     caml_leave_blocking_section();
 
     if (ret == 0)
-      ret = vorbis_synthesis_blockin(vd,vb);
+      ret = vorbis_synthesis_blockin(vd, vb);
     if (ret < 0)
       raise_err(ret);
   }
@@ -309,8 +293,7 @@ CAMLprim value ocaml_vorbis_decode_pcm(value vorbis_state, value stream_state, v
   CAMLreturn(Val_int(total_samples));
 }
 
-CAMLprim value ocaml_vorbis_synthesis_restart(value s)
-{
+CAMLprim value ocaml_vorbis_synthesis_restart(value s) {
   CAMLparam1(s);
   vorbis_synthesis_restart(Decoder_dsp_state_val(s));
   CAMLreturn(Val_unit);
@@ -318,19 +301,17 @@ CAMLprim value ocaml_vorbis_synthesis_restart(value s)
 
 /***** Encoding *****/
 
-typedef struct
-{
+typedef struct {
   vorbis_dsp_state vd;
   vorbis_block vb;
   vorbis_info vi;
   ogg_packet op;
 } encoder_t;
 
-#define Encoder_val(v) (*((encoder_t**)Data_custom_val(v)))
+#define Encoder_val(v) (*((encoder_t **)Data_custom_val(v)))
 #define Enc_dsp_state_val(v) (&Encoder_val(v)->vd)
 
-static void finalize_encoder(value e)
-{
+static void finalize_encoder(value e) {
   encoder_t *enc = Encoder_val(e);
 
   vorbis_block_clear(&enc->vb);
@@ -339,58 +320,57 @@ static void finalize_encoder(value e)
   free(enc);
 }
 
-static struct custom_operations encoder_ops =
-{
-  "ocaml_vorbis_encoder",
-  finalize_encoder,
-  custom_compare_default,
-  custom_hash_default,
-  custom_serialize_default,
-  custom_deserialize_default
-};
+static struct custom_operations encoder_ops = {
+    "ocaml_vorbis_encoder",   finalize_encoder,
+    custom_compare_default,   custom_hash_default,
+    custom_serialize_default, custom_deserialize_default};
 
-CAMLprim value ocaml_vorbis_analysis_init(value channels, value rate, value max_bitrate, value nominal_bitrate, value min_bitrate)
-{
+CAMLprim value ocaml_vorbis_analysis_init(value channels, value rate,
+                                          value max_bitrate,
+                                          value nominal_bitrate,
+                                          value min_bitrate) {
   encoder_t *enc = malloc(sizeof(encoder_t));
   value ans;
   int err;
 
   vorbis_info_init(&enc->vi);
-  err = vorbis_encode_init(&enc->vi, Int_val(channels), Int_val(rate), Int_val(max_bitrate), Int_val(nominal_bitrate), Int_val(min_bitrate));
-  if (err) {
-    vorbis_info_clear(&enc->vi);
-    raise_err(err);  
-  }
-  vorbis_analysis_init(&enc->vd, &enc->vi);
-  vorbis_block_init(&enc->vd, &enc->vb);
-  ans = caml_alloc_custom(&encoder_ops, sizeof(encoder_t*), 1, 0);
-  Encoder_val(ans) = enc;
-
-  return ans;
-}
-
-CAMLprim value ocaml_vorbis_analysis_init_vbr(value channels, value rate, value quality)
-{
-  encoder_t *enc = malloc(sizeof(encoder_t));
-  value ans;
-  int err;
-
-  vorbis_info_init(&enc->vi);
-  err = vorbis_encode_init_vbr(&enc->vi, Int_val(channels), Int_val(rate), Double_val(quality));
+  err = vorbis_encode_init(&enc->vi, Int_val(channels), Int_val(rate),
+                           Int_val(max_bitrate), Int_val(nominal_bitrate),
+                           Int_val(min_bitrate));
   if (err) {
     vorbis_info_clear(&enc->vi);
     raise_err(err);
   }
   vorbis_analysis_init(&enc->vd, &enc->vi);
   vorbis_block_init(&enc->vd, &enc->vb);
-  ans = caml_alloc_custom(&encoder_ops, sizeof(encoder_t*), 1, 0);
+  ans = caml_alloc_custom(&encoder_ops, sizeof(encoder_t *), 1, 0);
   Encoder_val(ans) = enc;
 
   return ans;
 }
 
-CAMLprim value ocaml_vorbis_reset(value vdsp)
-{
+CAMLprim value ocaml_vorbis_analysis_init_vbr(value channels, value rate,
+                                              value quality) {
+  encoder_t *enc = malloc(sizeof(encoder_t));
+  value ans;
+  int err;
+
+  vorbis_info_init(&enc->vi);
+  err = vorbis_encode_init_vbr(&enc->vi, Int_val(channels), Int_val(rate),
+                               Double_val(quality));
+  if (err) {
+    vorbis_info_clear(&enc->vi);
+    raise_err(err);
+  }
+  vorbis_analysis_init(&enc->vd, &enc->vi);
+  vorbis_block_init(&enc->vd, &enc->vb);
+  ans = caml_alloc_custom(&encoder_ops, sizeof(encoder_t *), 1, 0);
+  Encoder_val(ans) = enc;
+
+  return ans;
+}
+
+CAMLprim value ocaml_vorbis_reset(value vdsp) {
   encoder_t *enc = Encoder_val(vdsp);
 
   vorbis_block_clear(&enc->vb);
@@ -403,39 +383,38 @@ CAMLprim value ocaml_vorbis_reset(value vdsp)
   return Val_unit;
 }
 
-CAMLprim value ocaml_vorbis_analysis_headerout(value vdsp, value comments)
-{
+CAMLprim value ocaml_vorbis_analysis_headerout(value vdsp, value comments) {
   CAMLparam2(vdsp, comments);
-  CAMLlocal4(ret,p1,p2,p3);
+  CAMLlocal4(ret, p1, p2, p3);
   vorbis_dsp_state *vd = Enc_dsp_state_val(vdsp);
-  
-vorbis_comment vc;
+
+  vorbis_comment vc;
   ogg_packet header, header_comm, header_code;
   int i;
 
   vorbis_comment_init(&vc);
-  for(i = 0; i < Wosize_val(comments); i++)
-    vorbis_comment_add_tag(&vc, String_val(Field(Field(comments, i), 0)), String_val(Field(Field(comments, i), 1)));
+  for (i = 0; i < Wosize_val(comments); i++)
+    vorbis_comment_add_tag(&vc, String_val(Field(Field(comments, i), 0)),
+                           String_val(Field(Field(comments, i), 1)));
   vorbis_analysis_headerout(vd, &vc, &header, &header_comm, &header_code);
   vorbis_comment_clear(&vc);
 
   ret = caml_alloc_tuple(3);
-  Store_field(ret,0,value_of_packet(&header));
-  Store_field(ret,1,value_of_packet(&header_comm));
-  Store_field(ret,2,value_of_packet(&header_code));
+  Store_field(ret, 0, value_of_packet(&header));
+  Store_field(ret, 1, value_of_packet(&header_comm));
+  Store_field(ret, 2, value_of_packet(&header_code));
 
   CAMLreturn(ret);
 }
 
-CAMLprim value ocaml_vorbis_encode_get_channels(value vdsp)
-{
+CAMLprim value ocaml_vorbis_encode_get_channels(value vdsp) {
   CAMLparam1(vdsp);
   encoder_t *enc = Encoder_val(vdsp);
   CAMLreturn(Val_int(enc->vi.channels));
 }
 
-CAMLprim value ocaml_vorbis_encode_float(value vdsp, value vogg, value data, value _offs, value _len)
-{
+CAMLprim value ocaml_vorbis_encode_float(value vdsp, value vogg, value data,
+                                         value _offs, value _len) {
   CAMLparam3(vdsp, vogg, data);
   encoder_t *enc = Encoder_val(vdsp);
   vorbis_block *vb = &enc->vb;
@@ -449,14 +428,13 @@ CAMLprim value ocaml_vorbis_encode_float(value vdsp, value vogg, value data, val
   value datac;
   int channels = enc->vi.channels;
 
-  if (Wosize_val(data) != channels) 
+  if (Wosize_val(data) != channels)
     caml_raise_constant(*caml_named_value("vorbis_exn_invalid_channels"));
 
   vorbis_buffer = vorbis_analysis_buffer(vd, len);
-  for(c = 0; c < channels; c++)
-  {
+  for (c = 0; c < channels; c++) {
     datac = Field(data, c);
-    for(i = 0; i < len; i++)
+    for (i = 0; i < len; i++)
       vorbis_buffer[c][i] = Double_field(datac, i + offs);
   }
 
@@ -465,14 +443,13 @@ CAMLprim value ocaml_vorbis_encode_float(value vdsp, value vogg, value data, val
 
   /* TODO: split the encoding part? */
 
-  while(vorbis_analysis_blockout(vd, vb) == 1)
-  {
+  while (vorbis_analysis_blockout(vd, vb) == 1) {
     /* Analysis, assume we want to use bitrate management. */
     vorbis_analysis(vb, NULL);
     vorbis_bitrate_addblock(vb);
 
     /* Weld packets into the bitstream. */
-    while(vorbis_bitrate_flushpacket(vd, op))
+    while (vorbis_bitrate_flushpacket(vd, op))
       ogg_stream_packetin(os, op);
   }
   caml_leave_blocking_section();
@@ -480,20 +457,70 @@ CAMLprim value ocaml_vorbis_encode_float(value vdsp, value vogg, value data, val
   CAMLreturn(Val_unit);
 }
 
-CAMLprim value ocaml_vorbis_encode_time_of_granulepos(value v_state, value gpos)
-{
-  CAMLparam2(v_state,gpos);
+CAMLprim value ocaml_vorbis_encode_float_ba(value vdsp, value vogg, value data,
+                                            value _ofs, value _len) {
+  CAMLparam3(vdsp, vogg, data);
+  encoder_t *enc = Encoder_val(vdsp);
+  vorbis_block *vb = &enc->vb;
+  vorbis_dsp_state *vd = Enc_dsp_state_val(vdsp);
+  ogg_stream_state *os = Stream_state_val(vogg);
+  ogg_packet *op = &enc->op;
+  float **vorbis_buffer;
+  int ofs = Int_val(_ofs);
+  int len = Int_val(_len);
+  int c, i;
+  value datac;
+  int channels = enc->vi.channels;
+
+  if (Wosize_val(data) != channels)
+    caml_raise_constant(*caml_named_value("vorbis_exn_invalid_channels"));
+
+  if (channels == 0)
+    CAMLreturn(Val_unit);
+
+  if (Caml_ba_array_val(Field(data, 0))->dim[0] < ofs + len)
+    caml_failwith("Invalid length or offset");
+
+  vorbis_buffer = vorbis_analysis_buffer(vd, len);
+  for (c = 0; c < channels; c++) {
+    for (i = 0; i < len; i++) {
+      vorbis_buffer[c][i] =
+          ((float *)Caml_ba_data_val(Field(data, c)))[i + ofs];
+    }
+  }
+
+  caml_enter_blocking_section();
+  vorbis_analysis_wrote(vd, len);
+
+  /* TODO: split the encoding part? */
+
+  while (vorbis_analysis_blockout(vd, vb) == 1) {
+    /* Analysis, assume we want to use bitrate management. */
+    vorbis_analysis(vb, NULL);
+    vorbis_bitrate_addblock(vb);
+
+    /* Weld packets into the bitstream. */
+    while (vorbis_bitrate_flushpacket(vd, op))
+      ogg_stream_packetin(os, op);
+  }
+  caml_leave_blocking_section();
+
+  CAMLreturn(Val_unit);
+}
+
+CAMLprim value ocaml_vorbis_encode_time_of_granulepos(value v_state,
+                                                      value gpos) {
+  CAMLparam2(v_state, gpos);
   encoder_t *enc = Encoder_val(v_state);
   ogg_int64_t granulepos = Int64_val(gpos);
-  CAMLreturn(caml_copy_nativeint(vorbis_granule_time(&enc->vd,granulepos)));
+  CAMLreturn(caml_copy_nativeint(vorbis_granule_time(&enc->vd, granulepos)));
 }
 
 /***** File Decoding *****/
 
-
-/* This should be malloced since we might want to register *_func as global root. */
-typedef struct
-{
+/* This should be malloced since we might want to register *_func as global
+ * root. */
+typedef struct {
   OggVorbis_File *ovf;
   int bitstream;
   value read_func;
@@ -501,15 +528,14 @@ typedef struct
   value tell_func;
 } myvorbis_dec_file_t;
 
-#define Decfile_val(v) (*((myvorbis_dec_file_t**)Data_custom_val(v)))
+#define Decfile_val(v) (*((myvorbis_dec_file_t **)Data_custom_val(v)))
 
-static void finalize_dec_file(value _df)
-{
+static void finalize_dec_file(value _df) {
   myvorbis_dec_file_t *df = Decfile_val(_df);
 
   ov_clear(df->ovf);
   free(df->ovf);
-  df->ovf=NULL;
+  df->ovf = NULL;
   caml_remove_global_root(&df->read_func);
   caml_remove_global_root(&df->seek_func);
   caml_remove_global_root(&df->tell_func);
@@ -517,53 +543,46 @@ static void finalize_dec_file(value _df)
   free(df);
 }
 
-static struct custom_operations decfile_ops =
-{
-  "ocaml_vorbis_decfile",
-  finalize_dec_file,
-  custom_compare_default,
-  custom_hash_default,
-  custom_serialize_default,
-  custom_deserialize_default
-};
+static struct custom_operations decfile_ops = {
+    "ocaml_vorbis_decfile",   finalize_dec_file,
+    custom_compare_default,   custom_hash_default,
+    custom_serialize_default, custom_deserialize_default};
 
-static size_t read_func_cb(void *ptr, size_t size, size_t nmemb, void *datasource)
-{
+static size_t read_func_cb(void *ptr, size_t size, size_t nmemb,
+                           void *datasource) {
   myvorbis_dec_file_t *df = datasource;
   value ret;
   int len;
 
   caml_leave_blocking_section();
-  ret = caml_callback(df->read_func, Val_int(size*nmemb));
-  len = Int_val(Field(ret,1));
-  memcpy(ptr, String_val(Field(ret,0)), len);
+  ret = caml_callback(df->read_func, Val_int(size * nmemb));
+  len = Int_val(Field(ret, 1));
+  memcpy(ptr, String_val(Field(ret, 0)), len);
   caml_enter_blocking_section();
 
   return len;
 }
 
-static int seek_func_cb(void *datasource, ogg_int64_t offset, int whence)
-{
+static int seek_func_cb(void *datasource, ogg_int64_t offset, int whence) {
   myvorbis_dec_file_t *df = datasource;
   int cmd;
   int ret;
 
-  switch(whence)
-  {
-    case SEEK_SET:
-      cmd = 0;
-      break;
+  switch (whence) {
+  case SEEK_SET:
+    cmd = 0;
+    break;
 
-    case SEEK_CUR:
-      cmd = 1;
-      break;
+  case SEEK_CUR:
+    cmd = 1;
+    break;
 
-    case SEEK_END:
-      cmd = 2;
-      break;
+  case SEEK_END:
+    cmd = 2;
+    break;
 
-    default:
-      assert(0);
+  default:
+    assert(0);
   }
   caml_leave_blocking_section();
   ret = Int_val(caml_callback2(df->seek_func, Val_int(offset), Val_int(cmd)));
@@ -572,8 +591,7 @@ static int seek_func_cb(void *datasource, ogg_int64_t offset, int whence)
   return ret;
 }
 
-static long tell_func_cb(void *datasource)
-{
+static long tell_func_cb(void *datasource) {
   myvorbis_dec_file_t *df = datasource;
   int ret;
 
@@ -584,16 +602,13 @@ static long tell_func_cb(void *datasource)
   return ret;
 }
 
-static ov_callbacks callbacks =
-{
-  .read_func = read_func_cb,
-  .seek_func = seek_func_cb,
-  .close_func = NULL,
-  .tell_func = tell_func_cb
-};
+static ov_callbacks callbacks = {.read_func = read_func_cb,
+                                 .seek_func = seek_func_cb,
+                                 .close_func = NULL,
+                                 .tell_func = tell_func_cb};
 
-CAMLprim value ocaml_vorbis_open_dec_stream(value read_func, value seek_func, value tell_func, value params)
-{
+CAMLprim value ocaml_vorbis_open_dec_stream(value read_func, value seek_func,
+                                            value tell_func, value params) {
   CAMLparam4(read_func, seek_func, tell_func, params);
   CAMLlocal1(block);
   int ret = 0;
@@ -601,7 +616,7 @@ CAMLprim value ocaml_vorbis_open_dec_stream(value read_func, value seek_func, va
 
   df = malloc(sizeof(myvorbis_dec_file_t));
 
-  df->ovf = (OggVorbis_File*)malloc(sizeof(OggVorbis_File));
+  df->ovf = (OggVorbis_File *)malloc(sizeof(OggVorbis_File));
   df->bitstream = 0;
   caml_register_global_root(&df->read_func);
   df->read_func = read_func;
@@ -614,8 +629,7 @@ CAMLprim value ocaml_vorbis_open_dec_stream(value read_func, value seek_func, va
   ret = ov_open_callbacks(df, df->ovf, NULL, 0, callbacks);
   caml_leave_blocking_section();
 
-  if(ret < 0)
-  {
+  if (ret < 0) {
     caml_remove_global_root(&df->tell_func);
     caml_remove_global_root(&df->seek_func);
     caml_remove_global_root(&df->read_func);
@@ -624,14 +638,15 @@ CAMLprim value ocaml_vorbis_open_dec_stream(value read_func, value seek_func, va
     raise_err(ret);
   }
 
-  block = caml_alloc_custom(&decfile_ops, sizeof(myvorbis_dec_file_t*),0,1);
+  block = caml_alloc_custom(&decfile_ops, sizeof(myvorbis_dec_file_t *), 0, 1);
   Decfile_val(block) = df;
 
   CAMLreturn(block);
 }
 
-CAMLprim value ocaml_vorbis_decode(value d_f, value be_, value ss_, value signed_, value buf_, value ofs_, value len_)
-{
+CAMLprim value ocaml_vorbis_decode(value d_f, value be_, value ss_,
+                                   value signed_, value buf_, value ofs_,
+                                   value len_) {
   CAMLparam2(d_f, buf_);
 
   myvorbis_dec_file_t *df = Decfile_val(d_f);
@@ -641,7 +656,7 @@ CAMLprim value ocaml_vorbis_decode(value d_f, value be_, value ss_, value signed
   int big_endian = Bool_val(be_);
   int sample_size = Int_val(ss_);
   int sign = Bool_val(signed_);
-  char* buf;
+  char *buf;
 
   if (!df->ovf)
     caml_raise_constant(*caml_named_value("vorbis_exn_invalid_parameters"));
@@ -658,13 +673,13 @@ CAMLprim value ocaml_vorbis_decode(value d_f, value be_, value ss_, value signed
    * need to call ocaml code.
    */
   caml_enter_blocking_section();
-  ret = ov_read(df->ovf, buf, len, big_endian, sample_size, sign, &df->bitstream);
+  ret =
+      ov_read(df->ovf, buf, len, big_endian, sample_size, sign, &df->bitstream);
   caml_leave_blocking_section();
 
-  if (ret <= 0)
-  {
+  if (ret <= 0) {
     free(buf);
-    ret?raise_err(ret):caml_raise_end_of_file();
+    ret ? raise_err(ret) : caml_raise_end_of_file();
   }
   memcpy(Bytes_val(buf_) + ofs, buf, ret);
   free(buf);
@@ -672,13 +687,13 @@ CAMLprim value ocaml_vorbis_decode(value d_f, value be_, value ss_, value signed
   CAMLreturn(Val_int(ret));
 }
 
-CAMLprim value ocaml_vorbis_decode_byte(value *argv, int argn)
-{
-  return ocaml_vorbis_decode(argv[0], argv[1], argv[2], argv[3], argv[4], argv[5], argv[6]);
+CAMLprim value ocaml_vorbis_decode_byte(value *argv, int argn) {
+  return ocaml_vorbis_decode(argv[0], argv[1], argv[2], argv[3], argv[4],
+                             argv[5], argv[6]);
 }
 
-CAMLprim value ocaml_vorbis_decode_float(value d_f, value dst, value ofs_, value len_)
-{
+CAMLprim value ocaml_vorbis_decode_float(value d_f, value dst, value ofs_,
+                                         value len_) {
   CAMLparam2(d_f, dst);
 
   myvorbis_dec_file_t *df = Decfile_val(d_f);
@@ -686,7 +701,7 @@ CAMLprim value ocaml_vorbis_decode_float(value d_f, value dst, value ofs_, value
   int ofs = Int_val(ofs_);
   int len = Int_val(len_);
   float **buf;
-  int chans,c,i;
+  int chans, c, i;
 
   if (!df->ovf)
     caml_raise_constant(*caml_named_value("vorbis_exn_invalid_parameters"));
@@ -694,7 +709,8 @@ CAMLprim value ocaml_vorbis_decode_float(value d_f, value dst, value ofs_, value
 
   if (chans > Wosize_val(dst))
     caml_raise_constant(*caml_named_value("vorbis_exn_invalid_parameters"));
-  if (Wosize_val(dst) < 1 || Wosize_val(Field(dst,0)) / Double_wosize - ofs < len)
+  if (Wosize_val(dst) < 1 ||
+      Wosize_val(Field(dst, 0)) / Double_wosize - ofs < len)
     caml_raise_constant(*caml_named_value("vorbis_exn_invalid_parameters"));
 
   /* We have to make sure that when a callback is called, the ocaml master lock
@@ -706,7 +722,7 @@ CAMLprim value ocaml_vorbis_decode_float(value d_f, value dst, value ofs_, value
   caml_leave_blocking_section();
 
   if (ret <= 0)
-    ret?raise_err(ret):caml_raise_end_of_file();
+    ret ? raise_err(ret) : caml_raise_end_of_file();
 
   for (c = 0; c < chans; c++)
     for (i = 0; i < ret; i++)
@@ -715,8 +731,7 @@ CAMLprim value ocaml_vorbis_decode_float(value d_f, value dst, value ofs_, value
   CAMLreturn(Val_int(ret));
 }
 
-CAMLprim value ocaml_vorbis_decode_float_alloc(value d_f, value len_)
-{
+CAMLprim value ocaml_vorbis_decode_float_alloc(value d_f, value len_) {
   CAMLparam1(d_f);
   CAMLlocal2(ans, ansc);
 
@@ -739,11 +754,10 @@ CAMLprim value ocaml_vorbis_decode_float_alloc(value d_f, value len_)
   caml_leave_blocking_section();
 
   if (ret <= 0)
-    ret?raise_err(ret):caml_raise_end_of_file();
+    ret ? raise_err(ret) : caml_raise_end_of_file();
 
   ans = caml_alloc_tuple(chans);
-  for (c = 0; c < chans; c++)
-  {
+  for (c = 0; c < chans; c++) {
     ansc = caml_alloc(ret * Double_wosize, Double_array_tag);
     Store_field(ans, c, ansc);
     for (i = 0; i < ret; i++)
@@ -753,14 +767,12 @@ CAMLprim value ocaml_vorbis_decode_float_alloc(value d_f, value len_)
   CAMLreturn(ans);
 }
 
-CAMLprim value ocaml_vorbis_get_dec_file_bitstream(value d_f)
-{
+CAMLprim value ocaml_vorbis_get_dec_file_bitstream(value d_f) {
   myvorbis_dec_file_t *df = Decfile_val(d_f);
   return Val_int(df->bitstream);
 }
 
-CAMLprim value ocaml_vorbis_decoder_info(value d_f, value bs)
-{
+CAMLprim value ocaml_vorbis_decoder_info(value d_f, value bs) {
   CAMLparam1(d_f);
   CAMLlocal1(ans);
   myvorbis_dec_file_t *df = Decfile_val(d_f);
@@ -784,8 +796,7 @@ CAMLprim value ocaml_vorbis_decoder_info(value d_f, value bs)
   CAMLreturn(ans);
 }
 
-CAMLprim value ocaml_vorbis_get_dec_file_comments(value d_f, value link_)
-{
+CAMLprim value ocaml_vorbis_get_dec_file_comments(value d_f, value link_) {
   CAMLparam2(d_f, link_);
   CAMLlocal2(ans, cmts);
 
@@ -800,7 +811,8 @@ CAMLprim value ocaml_vorbis_get_dec_file_comments(value d_f, value link_)
 
   if (!vc)
     /* TODO: better error */
-    caml_raise_with_arg(*caml_named_value("vorbis_exn_unknown_error"), Val_int(666));
+    caml_raise_with_arg(*caml_named_value("vorbis_exn_unknown_error"),
+                        Val_int(666));
 
   cmts = caml_alloc_tuple(vc->comments);
   for (i = 0; i < vc->comments; i++)
@@ -815,8 +827,7 @@ CAMLprim value ocaml_vorbis_get_dec_file_comments(value d_f, value link_)
   CAMLreturn(ans);
 }
 
-CAMLprim value ocaml_vorbis_decoder_bitrate(value d_f, value bs)
-{
+CAMLprim value ocaml_vorbis_decoder_bitrate(value d_f, value bs) {
   CAMLparam1(d_f);
   myvorbis_dec_file_t *df = Decfile_val(d_f);
   int bitstream = Int_val(bs);
@@ -829,8 +840,7 @@ CAMLprim value ocaml_vorbis_decoder_bitrate(value d_f, value bs)
   CAMLreturn(Val_int(ret));
 }
 
-CAMLprim value ocaml_vorbis_decoder_time_total(value d_f, value bs)
-{
+CAMLprim value ocaml_vorbis_decoder_time_total(value d_f, value bs) {
   CAMLparam1(d_f);
   myvorbis_dec_file_t *df = Decfile_val(d_f);
   int bitstream = Int_val(bs);
@@ -843,8 +853,7 @@ CAMLprim value ocaml_vorbis_decoder_time_total(value d_f, value bs)
   CAMLreturn(caml_copy_double(ret));
 }
 
-CAMLprim value ocaml_vorbis_decoder_pcm_total(value d_f, value bs)
-{
+CAMLprim value ocaml_vorbis_decoder_pcm_total(value d_f, value bs) {
   CAMLparam1(d_f);
   myvorbis_dec_file_t *df = Decfile_val(d_f);
   int bitstream = Int_val(bs);
@@ -857,8 +866,7 @@ CAMLprim value ocaml_vorbis_decoder_pcm_total(value d_f, value bs)
   CAMLreturn(Val_int(ret));
 }
 
-CAMLprim value ocaml_vorbis_decoder_streams(value d_f)
-{
+CAMLprim value ocaml_vorbis_decoder_streams(value d_f) {
   CAMLparam1(d_f);
   myvorbis_dec_file_t *df = Decfile_val(d_f);
   long ret;
@@ -870,8 +878,7 @@ CAMLprim value ocaml_vorbis_decoder_streams(value d_f)
   CAMLreturn(Val_int(ret));
 }
 
-CAMLprim value ocaml_vorbis_decoder_serialnumber(value d_f, value bs)
-{
+CAMLprim value ocaml_vorbis_decoder_serialnumber(value d_f, value bs) {
   CAMLparam1(d_f);
   myvorbis_dec_file_t *df = Decfile_val(d_f);
   int bitstream = Int_val(bs);
@@ -887,25 +894,23 @@ CAMLprim value ocaml_vorbis_decoder_serialnumber(value d_f, value bs)
 /* Ogg skeleton interface */
 
 /* Wrappers */
-static void write32le(unsigned char *ptr,ogg_uint32_t v)
-{
-  ptr[0]=v&0xff;
-  ptr[1]=(v>>8)&0xff;
-  ptr[2]=(v>>16)&0xff;
-  ptr[3]=(v>>24)&0xff;
+static void write32le(unsigned char *ptr, ogg_uint32_t v) {
+  ptr[0] = v & 0xff;
+  ptr[1] = (v >> 8) & 0xff;
+  ptr[2] = (v >> 16) & 0xff;
+  ptr[3] = (v >> 24) & 0xff;
 }
 
-static void write64le(unsigned char *ptr,ogg_int64_t v)
-{
-  ogg_uint32_t hi=v>>32;
-  ptr[0]=v&0xff;
-  ptr[1]=(v>>8)&0xff;
-  ptr[2]=(v>>16)&0xff;
-  ptr[3]=(v>>24)&0xff;
-  ptr[4]=hi&0xff;
-  ptr[5]=(hi>>8)&0xff;
-  ptr[6]=(hi>>16)&0xff;
-  ptr[7]=(hi>>24)&0xff;
+static void write64le(unsigned char *ptr, ogg_int64_t v) {
+  ogg_uint32_t hi = v >> 32;
+  ptr[0] = v & 0xff;
+  ptr[1] = (v >> 8) & 0xff;
+  ptr[2] = (v >> 16) & 0xff;
+  ptr[3] = (v >> 24) & 0xff;
+  ptr[4] = hi & 0xff;
+  ptr[5] = (hi >> 8) & 0xff;
+  ptr[6] = (hi >> 16) & 0xff;
+  ptr[7] = (hi >> 24) & 0xff;
 }
 
 /* Values from http://xiph.org/ogg/doc/skeleton.html */
@@ -914,31 +919,36 @@ static void write64le(unsigned char *ptr,ogg_int64_t v)
 #define FISBONE_SIZE 52
 
 /* Code from theorautils.c in ffmpeg2theora */
-CAMLprim value ocaml_vorbis_skeleton_fisbone(value serial, value samplerate, value start, value content)
-{
-  CAMLparam4(serial,samplerate,start,content);
+CAMLprim value ocaml_vorbis_skeleton_fisbone(value serial, value samplerate,
+                                             value start, value content) {
+  CAMLparam4(serial, samplerate, start, content);
   CAMLlocal1(packet);
   ogg_packet op;
-  int len = FISBONE_SIZE+caml_string_length(content);
+  int len = FISBONE_SIZE + caml_string_length(content);
 
-  memset (&op, 0, sizeof (op));
+  memset(&op, 0, sizeof(op));
   op.packet = malloc(len);
   if (op.packet == NULL)
     caml_raise_out_of_memory();
 
-  memset (op.packet, 0, len);
+  memset(op.packet, 0, len);
   /* it will be the fisbone packet for the vorbis audio */
-  memcpy (op.packet, FISBONE_IDENTIFIER, 8); /* identifier */
-  write32le(op.packet+8, FISBONE_MESSAGE_HEADER_OFFSET); /* offset of the message header fields */
-  write32le(op.packet+12, Nativeint_val(serial)); /* serialno of the vorbis stream */
-  write32le(op.packet+16, 3); /* number of header packet */
+  memcpy(op.packet, FISBONE_IDENTIFIER, 8); /* identifier */
+  write32le(
+      op.packet + 8,
+      FISBONE_MESSAGE_HEADER_OFFSET); /* offset of the message header fields */
+  write32le(op.packet + 12,
+            Nativeint_val(serial)); /* serialno of the vorbis stream */
+  write32le(op.packet + 16, 3);     /* number of header packet */
   /* granulerate, temporal resolution of the bitstream in Hz */
-  write64le(op.packet+20, (ogg_int64_t)Int64_val(samplerate)); /* granulerate numerator */
-  write64le(op.packet+28, (ogg_int64_t)1); /* granulerate denominator */
-  write64le(op.packet+36, (ogg_int64_t)Int64_val(start)); /* start granule */
-  write32le(op.packet+44, 2); /* preroll, for vorbis its 2 */
-  *(op.packet+48) = 0; /* granule shift, always 0 for vorbis */
-  memcpy (op.packet+FISBONE_SIZE, String_val(content), caml_string_length(content));
+  write64le(op.packet + 20,
+            (ogg_int64_t)Int64_val(samplerate)); /* granulerate numerator */
+  write64le(op.packet + 28, (ogg_int64_t)1);     /* granulerate denominator */
+  write64le(op.packet + 36, (ogg_int64_t)Int64_val(start)); /* start granule */
+  write32le(op.packet + 44, 2); /* preroll, for vorbis its 2 */
+  *(op.packet + 48) = 0;        /* granule shift, always 0 for vorbis */
+  memcpy(op.packet + FISBONE_SIZE, String_val(content),
+         caml_string_length(content));
 
   op.b_o_s = 0;
   op.e_o_s = 0;
@@ -948,4 +958,3 @@ CAMLprim value ocaml_vorbis_skeleton_fisbone(value serial, value samplerate, val
   free(op.packet);
   CAMLreturn(packet);
 }
-
