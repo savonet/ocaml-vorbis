@@ -291,6 +291,14 @@ module Decoder = struct
     t -> Ogg.Stream.stream -> float array array -> int -> int -> int
     = "ocaml_vorbis_decode_pcm"
 
+  external decode_pcm_ba :
+    t ->
+    Ogg.Stream.stream ->
+    (float, Bigarray.float32_elt, Bigarray.c_layout) Bigarray.Array1.t array ->
+    int ->
+    int ->
+    int = "ocaml_vorbis_decode_pcm_ba"
+
   external restart : t -> unit = "ocaml_vorbis_synthesis_restart"
 end
 

@@ -24,7 +24,7 @@
   * @author Samuel Mimram
   *)
 
-let bufsize = 16 * 1024
+let bufsize = 1024
 let src = ref ""
 let dst = ref ""
 
@@ -68,9 +68,13 @@ let progress_bar =
           | _ -> failwith "this did not happen"))
 
 let usage = "usage: ogg2wav [options] source destination"
+let use_ba = ref false
+let use_alloc = ref false
 
 let _ =
-  Arg.parse []
+  Arg.parse
+    [("-ba", Arg.Set use_ba, "Use big arrays");
+     ("-alloc", Arg.Set use_alloc, "Use alloc API")]
     (let pnum = ref (-1) in
      fun s ->
        incr pnum;
@@ -90,10 +94,11 @@ let _ =
   let vdr, cmt = Vorbis.File.Decoder.comments df (-1) in
   let duration = Vorbis.File.Decoder.duration df (-1) in
   let samples = Vorbis.File.Decoder.samples df (-1) in
+  let chans = infos.Vorbis.audio_channels in
   Printf.printf
     "Input file characteristics: vorbis codec v%d, %d channels, %d Hz, %.02f \
      s, %d samples\n"
-    infos.Vorbis.vorbis_version infos.Vorbis.audio_channels
+    infos.Vorbis.vorbis_version chans
     infos.Vorbis.audio_samplerate duration samples;
   Printf.printf "* vendor: %s\n" vdr;
   List.iter
@@ -105,15 +110,41 @@ let _ =
   let tmpdst, oc =
     Filename.open_temp_file ~mode:[Open_binary] "ogg2wav" ".raw"
   in
-  (let buf = Bytes.create bufsize in
+  (let decode =
+     if !use_ba then (
+       let process len buf = 
+         for i = 0 to len - 1 do
+           for c = 0 to chans - 1 do
+             let s = int_of_float (buf.(c).{i} *. 32767.) in
+             output_short oc s
+           done
+         done;
+         len
+        in
+        if !use_alloc then (fun () ->
+           if chans = 0 then 0 else (
+           let buf = Vorbis.File.Decoder.decode_float_alloc_ba df bufsize in
+           process (Bigarray.Array1.dim buf.(0)) buf))
+         else (
+           let buf = Array.init chans (fun _ -> Bigarray.Array1.create Bigarray.float32 Bigarray.c_layout bufsize) in
+           fun () ->
+              let len = Vorbis.File.Decoder.decode_float_ba df buf 0 bufsize in
+              process len buf
+         )
+     ) else (
+       let buf = Bytes.create (16 * bufsize) in
+       fun () ->
+         let r = Vorbis.File.Decoder.decode df buf 0 bufsize in
+         output oc buf 0 r;
+         r / 4)
+   in
    let pos = ref 0 in
    let tot = samples in
    try
      while true do
-       let r = Vorbis.File.Decoder.decode df buf 0 bufsize in
-       output oc buf 0 r;
+       let r = decode () in
        pos := !pos + r;
-       progress_bar "Decoding ogg:" (!pos / 4) tot
+       progress_bar "Decoding ogg:" !pos tot
      done;
      close_out oc;
      Unix.close dfd

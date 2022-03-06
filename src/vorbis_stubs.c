@@ -293,6 +293,79 @@ CAMLprim value ocaml_vorbis_decode_pcm(value vorbis_state, value stream_state,
   CAMLreturn(Val_int(total_samples));
 }
 
+CAMLprim value ocaml_vorbis_decode_pcm_ba(value vorbis_state, value stream_state,
+                                       value buf, value _pos, value _len) {
+  CAMLparam3(vorbis_state, stream_state, buf);
+  CAMLlocal2(buffer, chan);
+  ogg_stream_state *os = Stream_state_val(stream_state);
+  ogg_packet op;
+  vorbis_block *vb = Block_val(vorbis_state);
+  vorbis_dsp_state *vd = Decoder_dsp_state_val(vorbis_state);
+  vorbis_info *vi = Decoder_info_val(vorbis_state);
+  int pos = Int_val(_pos);
+  int len = Int_val(_len);
+  float **pcm;
+  int samples;
+  int i, j, ret;
+  int total_samples = 0;
+
+  while (1) {
+    while (total_samples < len) {
+      samples = vorbis_synthesis_pcmout(vd, &pcm);
+      if (samples < 0)
+        raise_err(samples);
+      if (samples == 0)
+        break;
+      if (samples > len - total_samples)
+        samples = len - total_samples;
+      if (Wosize_val(buf) != vi->channels)
+        caml_raise_constant(*caml_named_value("vorbis_exn_invalid_channels"));
+      for (i = 0; i < vi->channels; i++) {
+        chan = Field(buf, i);
+        if (Caml_ba_array_val(chan)->dim[0] - pos < samples)
+          caml_raise_constant(*caml_named_value("vorbis_exn_invalid"));
+        for (j = 0; j < samples; j++)
+          ((float *)Caml_ba_data_val(chan))[pos+j] = pcm[i][j];
+      }
+      pos += samples;
+      total_samples += samples;
+      ret = vorbis_synthesis_read(vd, samples);
+      if (ret < 0)
+        raise_err(ret);
+    }
+    if (total_samples == len)
+      CAMLreturn(Val_int(total_samples));
+
+    ret = ogg_stream_packetout(os, &op);
+    /* returned values are:
+     * 1: ok
+     * 0: not enough data. in this case
+     *    we return the number of samples
+     *    decoded if > 0 and raise
+     *    Ogg_not_enough_data otherwise
+     * -1: out of sync */
+    if (ret == 0) {
+      if (total_samples > 0)
+        CAMLreturn(Val_int(total_samples));
+      else
+        caml_raise_constant(*caml_named_value("ogg_exn_not_enough_data"));
+    }
+    if (ret == -1)
+      caml_raise_constant(*caml_named_value("ogg_exn_out_of_sync"));
+
+    caml_enter_blocking_section();
+    ret = vorbis_synthesis(vb, &op);
+    caml_leave_blocking_section();
+
+    if (ret == 0)
+      ret = vorbis_synthesis_blockin(vd, vb);
+    if (ret < 0)
+      raise_err(ret);
+  }
+
+  CAMLreturn(Val_int(total_samples));
+}
+
 CAMLprim value ocaml_vorbis_synthesis_restart(value s) {
   CAMLparam1(s);
   vorbis_synthesis_restart(Decoder_dsp_state_val(s));

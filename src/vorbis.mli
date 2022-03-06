@@ -194,6 +194,17 @@ module Decoder : sig
   val decode_pcm :
     t -> Ogg.Stream.stream -> float array array -> int -> int -> int
 
+  (** [decode_pcm_ba dec stream buffer pos offset] decodes pcm float data
+    * from [stream]. The floats are written in [buffer], starting at
+    * position [pos]. The function returns the number of samples actually written.*)
+  val decode_pcm_ba :
+    t ->
+    Ogg.Stream.stream ->
+    (float, Bigarray.float32_elt, Bigarray.c_layout) Bigarray.Array1.t array ->
+    int ->
+    int ->
+    int
+
   (** Restart the decoder *)
   val restart : t -> unit
 end
