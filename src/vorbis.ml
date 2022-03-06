@@ -227,6 +227,19 @@ module File = struct
     external decode_float_alloc : t -> int -> float array array
       = "ocaml_vorbis_decode_float_alloc"
 
+    external decode_float_ba :
+      t ->
+      (float, Bigarray.float32_elt, Bigarray.c_layout) Bigarray.Array1.t array ->
+      int ->
+      int ->
+      int = "ocaml_vorbis_decode_float_ba"
+
+    external decode_float_alloc_ba :
+      t ->
+      int ->
+      (float, Bigarray.float32_elt, Bigarray.c_layout) Bigarray.Array1.t array
+      = "ocaml_vorbis_decode_float_alloc_ba"
+
     external decode : t -> bool -> int -> bool -> bytes -> int -> int -> int
       = "ocaml_vorbis_decode_byte" "ocaml_vorbis_decode"
 

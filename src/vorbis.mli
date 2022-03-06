@@ -235,6 +235,23 @@ module File : sig
 
     val decode_float_alloc : t -> int -> float array array
 
+    (** [decode_float_ba dec buff ofs len] decodes [len] samples in each channel and puts
+      * the result in [buff] starting at position [ofs].
+      * @raise Hole_in_data if there was an interruption of the data.
+      * @raise Invalid_parameters if all the data cannot fit in the buffer starting at the given position.
+      *)
+    val decode_float_ba :
+      t ->
+      (float, Bigarray.float32_elt, Bigarray.c_layout) Bigarray.Array1.t array ->
+      int ->
+      int ->
+      int
+
+    val decode_float_alloc_ba :
+      t ->
+      int ->
+      (float, Bigarray.float32_elt, Bigarray.c_layout) Bigarray.Array1.t array
+
     (** Same as [decode_float] but decodes to integers. *)
     val decode :
       t ->

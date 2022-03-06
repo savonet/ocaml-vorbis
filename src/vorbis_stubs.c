@@ -767,6 +767,81 @@ CAMLprim value ocaml_vorbis_decode_float_alloc(value d_f, value len_) {
   CAMLreturn(ans);
 }
 
+CAMLprim value ocaml_vorbis_decode_float_ba(value d_f, value dst, value ofs_,
+                                            value len_) {
+  CAMLparam2(d_f, dst);
+
+  myvorbis_dec_file_t *df = Decfile_val(d_f);
+  int ret = 0;
+  int ofs = Int_val(ofs_);
+  int len = Int_val(len_);
+  float **buf;
+  int chans, c, i;
+
+  if (!df->ovf)
+    caml_raise_constant(*caml_named_value("vorbis_exn_invalid_parameters"));
+  chans = df->ovf->vi->channels;
+
+  if (chans > Wosize_val(dst))
+    caml_raise_constant(*caml_named_value("vorbis_exn_invalid_parameters"));
+  if (Wosize_val(dst) < 1 ||
+      Caml_ba_array_val(Field(dst, 0))->dim[0] - ofs < len)
+    caml_raise_constant(*caml_named_value("vorbis_exn_invalid_parameters"));
+
+  /* We have to make sure that when a callback is called, the ocaml master lock
+   * has been released.  Callbacks are responsible for taking it back if they
+   * need to call ocaml code.
+   */
+  caml_enter_blocking_section();
+  ret = ov_read_float(df->ovf, &buf, len, &df->bitstream);
+  caml_leave_blocking_section();
+
+  if (ret <= 0)
+    ret ? raise_err(ret) : caml_raise_end_of_file();
+
+  for (c = 0; c < chans; c++)
+    for (i = 0; i < ret; i++)
+      ((float *)Caml_ba_data_val(Field(dst, c)))[i + ofs] = buf[c][i];
+
+  CAMLreturn(Val_int(ret));
+}
+
+CAMLprim value ocaml_vorbis_decode_float_alloc_ba(value d_f, value len_) {
+  CAMLparam1(d_f);
+  CAMLlocal2(ans, ansc);
+
+  myvorbis_dec_file_t *df = Decfile_val(d_f);
+  int ret = 0;
+  int len = Int_val(len_);
+  float **buf;
+  int chans, c, i;
+
+  if (!df->ovf)
+    caml_raise_constant(*caml_named_value("vorbis_exn_invalid_parameters"));
+  chans = df->ovf->vi->channels;
+
+  /* We have to make sure that when a callback is called, the ocaml master lock
+   * has been released.  Callbacks are responsible for taking it back if they
+   * need to call ocaml code.
+   */
+  caml_enter_blocking_section();
+  ret = ov_read_float(df->ovf, &buf, len, &df->bitstream);
+  caml_leave_blocking_section();
+
+  if (ret <= 0)
+    ret ? raise_err(ret) : caml_raise_end_of_file();
+
+  ans = caml_alloc_tuple(chans);
+  for (c = 0; c < chans; c++) {
+    ansc = caml_ba_alloc_dims(CAML_BA_FLOAT32 | CAML_BA_C_LAYOUT, 1, NULL, len);
+    Store_field(ans, c, ansc);
+    for (i = 0; i < ret; i++)
+      ((float *)Caml_ba_data_val(ansc))[i] = buf[c][i];
+  }
+
+  CAMLreturn(ans);
+}
+
 CAMLprim value ocaml_vorbis_get_dec_file_bitstream(value d_f) {
   myvorbis_dec_file_t *df = Decfile_val(d_f);
   return Val_int(df->bitstream);
