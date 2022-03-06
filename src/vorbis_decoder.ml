@@ -57,15 +57,13 @@ let decoder ~decode_pcm ~make_pcm ~sub_pcm os =
           in
           let d = Vorbis.Decoder.init packet1 packet2 packet3 in
           let info = Vorbis.Decoder.info d in
-          let chan _ = make_pcm buflen in
-          let buf = Array.init info.Vorbis.audio_channels chan in
           let meta = Vorbis.Decoder.comments d in
-          decoder := Some (d, info, buf, meta);
-          (d, info, buf, meta)
+          decoder := Some (d, info, meta);
+          (d, info, meta)
       | Some d -> d
   in
   let info () =
-    let _, info, _, meta = init () in
+    let _, info, meta = init () in
     ( {
         Ogg_decoder.channels = info.Vorbis.audio_channels;
         sample_rate = info.Vorbis.audio_samplerate;
@@ -74,11 +72,13 @@ let decoder ~decode_pcm ~make_pcm ~sub_pcm os =
   in
   let restart new_os =
     os := new_os;
-    let d, _, _, _ = init () in
+    let d, _, _ = init () in
     Vorbis.Decoder.restart d
   in
   let decode feed =
-    let decoder, _, buf, _ = init () in
+    let decoder, info, _ = init () in
+    let chan _ = make_pcm buflen in
+    let buf = Array.init info.Vorbis.audio_channels chan in
     try
       let ret = decode_pcm decoder !os buf 0 buflen in
       feed (Array.map (fun x -> sub_pcm x 0 ret) buf)
