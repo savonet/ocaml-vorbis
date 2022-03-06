@@ -22,7 +22,7 @@
 let check = Vorbis.Decoder.check_packet
 let buflen = 1024
 
-let decoder os =
+let decoder ~decode_pcm ~make_pcm ~sub_pcm os =
   let decoder = ref None in
   let packet1 = ref None in
   let packet2 = ref None in
@@ -57,10 +57,7 @@ let decoder os =
           in
           let d = Vorbis.Decoder.init packet1 packet2 packet3 in
           let info = Vorbis.Decoder.info d in
-          (* This buffer is created once. The call to Array.sub
-           * below makes a fresh array out of it to pass to
-           * liquidsoap. *)
-          let chan _ = Array.make buflen 0. in
+          let chan _ = make_pcm buflen in
           let buf = Array.init info.Vorbis.audio_channels chan in
           let meta = Vorbis.Decoder.comments d in
           decoder := Some (d, info, buf, meta);
@@ -83,19 +80,33 @@ let decoder os =
   let decode feed =
     let decoder, _, buf, _ = init () in
     try
-      let ret = Vorbis.Decoder.decode_pcm decoder !os buf 0 buflen in
-      feed (Array.map (fun x -> Array.sub x 0 ret) buf)
+      let ret = decode_pcm decoder !os buf 0 buflen in
+      feed (Array.map (fun x -> sub_pcm x 0 ret) buf)
     with (* Apparently, we should hide this one.. *)
     | Vorbis.False ->
       raise Ogg.Not_enough_data
   in
-  Ogg_decoder.Audio
-    {
-      Ogg_decoder.name = "vorbis";
-      info;
-      decode;
-      restart;
-      samples_of_granulepos = (fun x -> x);
-    }
+  {
+    Ogg_decoder.name = "vorbis";
+    info;
+    decode;
+    restart;
+    samples_of_granulepos = (fun x -> x);
+  }
 
-let register () = Hashtbl.add Ogg_decoder.ogg_decoders "vorbis" (check, decoder)
+let register () =
+  Hashtbl.add Ogg_decoder.ogg_decoders "vorbis"
+    ( check,
+      fun os ->
+        Ogg_decoder.Audio
+          (decoder ~decode_pcm:Vorbis.Decoder.decode_pcm
+             ~make_pcm:(fun len -> Array.make len 0.)
+             ~sub_pcm:Array.sub os) );
+  Hashtbl.add Ogg_decoder.ogg_decoders "vorbis"
+    ( check,
+      fun os ->
+        Ogg_decoder.Audio_ba
+          (decoder ~decode_pcm:Vorbis.Decoder.decode_pcm_ba
+             ~make_pcm:
+               (Bigarray.Array1.create Bigarray.float32 Bigarray.c_layout)
+             ~sub_pcm:Bigarray.Array1.sub os) )

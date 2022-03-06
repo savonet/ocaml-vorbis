@@ -18,5 +18,5 @@
   (ocaml (>= 4.03.0))
   dune
   dune-configurator
-  (ogg (>= 0.7.0)))
+  (ogg (>= 0.7.1)))
 )
