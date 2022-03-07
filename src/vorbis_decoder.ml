@@ -22,7 +22,7 @@
 let check = Vorbis.Decoder.check_packet
 let buflen = 1024
 
-let decoder ~decode_pcm ~make_pcm ~sub_pcm os =
+let decoder os =
   let decoder = ref None in
   let packet1 = ref None in
   let packet2 = ref None in
@@ -75,7 +75,7 @@ let decoder ~decode_pcm ~make_pcm ~sub_pcm os =
     let d, _, _ = init () in
     Vorbis.Decoder.restart d
   in
-  let decode feed =
+  let decode ~decode_pcm ~make_pcm ~sub_pcm feed =
     let decoder, info, _ = init () in
     let chan _ = make_pcm buflen in
     let buf = Array.init info.Vorbis.audio_channels chan in
@@ -86,27 +86,21 @@ let decoder ~decode_pcm ~make_pcm ~sub_pcm os =
     | Vorbis.False ->
       raise Ogg.Not_enough_data
   in
-  {
-    Ogg_decoder.name = "vorbis";
-    info;
-    decode;
-    restart;
-    samples_of_granulepos = (fun x -> x);
-  }
+  let decoder ~decode_pcm ~make_pcm ~sub_pcm =
+    {
+      Ogg_decoder.name = "vorbis";
+      info;
+      decode = decode ~decode_pcm ~make_pcm ~sub_pcm;
+      restart;
+      samples_of_granulepos = (fun x -> x);
+    }
+  in
+  Ogg_decoder.Audio_both
+    ( decoder ~decode_pcm:Vorbis.Decoder.decode_pcm
+        ~make_pcm:(fun len -> Array.make len 0.)
+        ~sub_pcm:Array.sub,
+      decoder ~decode_pcm:Vorbis.Decoder.decode_pcm_ba
+        ~make_pcm:(Bigarray.Array1.create Bigarray.float32 Bigarray.c_layout)
+        ~sub_pcm:Bigarray.Array1.sub )
 
-let register () =
-  Hashtbl.add Ogg_decoder.ogg_decoders "vorbis"
-    ( check,
-      fun os ->
-        Ogg_decoder.Audio
-          (decoder ~decode_pcm:Vorbis.Decoder.decode_pcm
-             ~make_pcm:(fun len -> Array.make len 0.)
-             ~sub_pcm:Array.sub os) );
-  Hashtbl.add Ogg_decoder.ogg_decoders "vorbis"
-    ( check,
-      fun os ->
-        Ogg_decoder.Audio_ba
-          (decoder ~decode_pcm:Vorbis.Decoder.decode_pcm_ba
-             ~make_pcm:
-               (Bigarray.Array1.create Bigarray.float32 Bigarray.c_layout)
-             ~sub_pcm:Bigarray.Array1.sub os) )
+let register () = Hashtbl.add Ogg_decoder.ogg_decoders "vorbis" (check, decoder)
