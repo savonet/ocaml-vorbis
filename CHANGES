@@ -1,6 +1,7 @@
 0.8.1 (unreleased)
 =====
 * Add bigarray API.
+* Clip decoded data.
 
 0.8.0 (08-03-2021)
 =====

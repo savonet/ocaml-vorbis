@@ -50,6 +50,15 @@
 #define Bytes_val String_val
 #endif
 
+static inline double clip(double s) {
+  if (s < -1) {
+    return -1;
+  } else if (s > 1) {
+    return 1;
+  } else
+    return s;
+}
+
 static void raise_err(int ret) {
   switch (ret) {
   case OV_FALSE:
@@ -252,7 +261,7 @@ CAMLprim value ocaml_vorbis_decode_pcm(value vorbis_state, value stream_state,
         if (Wosize_val(chan) / Double_wosize - pos < samples)
           caml_raise_constant(*caml_named_value("vorbis_exn_invalid"));
         for (j = 0; j < samples; j++)
-          Store_double_field(chan, pos + j, pcm[i][j]);
+          Store_double_field(chan, pos + j, clip(pcm[i][j]));
       }
       pos += samples;
       total_samples += samples;
@@ -293,8 +302,9 @@ CAMLprim value ocaml_vorbis_decode_pcm(value vorbis_state, value stream_state,
   CAMLreturn(Val_int(total_samples));
 }
 
-CAMLprim value ocaml_vorbis_decode_pcm_ba(value vorbis_state, value stream_state,
-                                       value buf, value _pos, value _len) {
+CAMLprim value ocaml_vorbis_decode_pcm_ba(value vorbis_state,
+                                          value stream_state, value buf,
+                                          value _pos, value _len) {
   CAMLparam3(vorbis_state, stream_state, buf);
   CAMLlocal2(buffer, chan);
   ogg_stream_state *os = Stream_state_val(stream_state);
@@ -325,7 +335,7 @@ CAMLprim value ocaml_vorbis_decode_pcm_ba(value vorbis_state, value stream_state
         if (Caml_ba_array_val(chan)->dim[0] - pos < samples)
           caml_raise_constant(*caml_named_value("vorbis_exn_invalid"));
         for (j = 0; j < samples; j++)
-          ((float *)Caml_ba_data_val(chan))[pos+j] = pcm[i][j];
+          ((float *)Caml_ba_data_val(chan))[pos + j] = pcm[i][j];
       }
       pos += samples;
       total_samples += samples;
@@ -799,7 +809,7 @@ CAMLprim value ocaml_vorbis_decode_float(value d_f, value dst, value ofs_,
 
   for (c = 0; c < chans; c++)
     for (i = 0; i < ret; i++)
-      Store_double_field(Field(dst, c), i + ofs, buf[c][i]);
+      Store_double_field(Field(dst, c), i + ofs, clip(buf[c][i]));
 
   CAMLreturn(Val_int(ret));
 }
@@ -834,7 +844,7 @@ CAMLprim value ocaml_vorbis_decode_float_alloc(value d_f, value len_) {
     ansc = caml_alloc(ret * Double_wosize, Double_array_tag);
     Store_field(ans, c, ansc);
     for (i = 0; i < ret; i++)
-      Store_double_field(ansc, i, buf[c][i]);
+      Store_double_field(ansc, i, clip(buf[c][i]));
   }
 
   CAMLreturn(ans);
