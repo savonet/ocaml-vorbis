@@ -97,7 +97,7 @@ let decoder os =
   in
   Ogg_decoder.Audio_both
     ( decoder ~decode_pcm:Vorbis.Decoder.decode_pcm
-        ~make_pcm:(fun len -> Array.make len 0.)
+        ~make_pcm:(fun len -> Array.create_float len)
         ~sub_pcm:Array.sub,
       decoder ~decode_pcm:Vorbis.Decoder.decode_pcm_ba
         ~make_pcm:(Bigarray.Array1.create Bigarray.float32 Bigarray.c_layout)
