@@ -248,32 +248,48 @@ CAMLprim value ocaml_vorbis_decode_pcm(value vorbis_state, value stream_state,
 
   while (1) {
     while (total_samples < len) {
+      caml_release_runtime_system();
       samples = vorbis_synthesis_pcmout(vd, &pcm);
+      caml_acquire_runtime_system();
+
       if (samples < 0)
         raise_err(samples);
+
       if (samples == 0)
         break;
+
       if (samples > len - total_samples)
         samples = len - total_samples;
+
       if (Wosize_val(buf) != vi->channels)
         caml_raise_constant(*caml_named_value("vorbis_exn_invalid_channels"));
+
       for (i = 0; i < vi->channels; i++) {
         chan = Field(buf, i);
         if (Wosize_val(chan) / Double_wosize - pos < samples)
           caml_raise_constant(*caml_named_value("vorbis_exn_invalid"));
+
         for (j = 0; j < samples; j++)
           Store_double_field(chan, pos + j, clip(pcm[i][j]));
       }
+
       pos += samples;
       total_samples += samples;
+
+      caml_release_runtime_system();
       ret = vorbis_synthesis_read(vd, samples);
+      caml_acquire_runtime_system();
+
       if (ret < 0)
         raise_err(ret);
     }
     if (total_samples == len)
       CAMLreturn(Val_int(total_samples));
 
+    caml_release_runtime_system();
     ret = ogg_stream_packetout(os, &op);
+    caml_acquire_runtime_system();
+
     /* returned values are:
      * 1: ok
      * 0: not enough data. in this case
@@ -294,8 +310,12 @@ CAMLprim value ocaml_vorbis_decode_pcm(value vorbis_state, value stream_state,
     ret = vorbis_synthesis(vb, &op);
     caml_acquire_runtime_system();
 
-    if (ret == 0)
+    if (ret == 0) {
+      caml_release_runtime_system();
       ret = vorbis_synthesis_blockin(vd, vb);
+      caml_acquire_runtime_system();
+    }
+
     if (ret < 0)
       raise_err(ret);
   }
@@ -322,32 +342,48 @@ CAMLprim value ocaml_vorbis_decode_pcm_ba(value vorbis_state,
 
   while (1) {
     while (total_samples < len) {
+      caml_release_runtime_system();
       samples = vorbis_synthesis_pcmout(vd, &pcm);
+      caml_acquire_runtime_system();
+
       if (samples < 0)
         raise_err(samples);
+
       if (samples == 0)
         break;
+
       if (samples > len - total_samples)
         samples = len - total_samples;
+
       if (Wosize_val(buf) != vi->channels)
         caml_raise_constant(*caml_named_value("vorbis_exn_invalid_channels"));
+
       for (i = 0; i < vi->channels; i++) {
         chan = Field(buf, i);
         if (Caml_ba_array_val(chan)->dim[0] - pos < samples)
           caml_raise_constant(*caml_named_value("vorbis_exn_invalid"));
+
         for (j = 0; j < samples; j++)
-          ((float *)Caml_ba_data_val(chan))[pos + j] = pcm[i][j];
+          ((float *)Caml_ba_data_val(chan))[pos + j] = clip(pcm[i][j]);
       }
       pos += samples;
       total_samples += samples;
+
+      caml_release_runtime_system();
       ret = vorbis_synthesis_read(vd, samples);
+      caml_acquire_runtime_system();
+
       if (ret < 0)
         raise_err(ret);
     }
+
     if (total_samples == len)
       CAMLreturn(Val_int(total_samples));
 
+    caml_release_runtime_system();
     ret = ogg_stream_packetout(os, &op);
+    caml_acquire_runtime_system();
+
     /* returned values are:
      * 1: ok
      * 0: not enough data. in this case
@@ -368,8 +404,12 @@ CAMLprim value ocaml_vorbis_decode_pcm_ba(value vorbis_state,
     ret = vorbis_synthesis(vb, &op);
     caml_acquire_runtime_system();
 
-    if (ret == 0)
+    if (ret == 0) {
+      caml_release_runtime_system();
       ret = vorbis_synthesis_blockin(vd, vb);
+      caml_acquire_runtime_system();
+    }
+
     if (ret < 0)
       raise_err(ret);
   }
@@ -920,7 +960,7 @@ CAMLprim value ocaml_vorbis_decode_float_alloc_ba(value d_f, value len_) {
     ansc = caml_ba_alloc_dims(CAML_BA_FLOAT32 | CAML_BA_C_LAYOUT, 1, NULL, ret);
     Store_field(ans, c, ansc);
     for (i = 0; i < ret; i++)
-      ((float *)Caml_ba_data_val(ansc))[i] = buf[c][i];
+      ((float *)Caml_ba_data_val(ansc))[i] = clip(buf[c][i]);
   }
 
   CAMLreturn(ans);
