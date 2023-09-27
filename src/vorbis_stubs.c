@@ -51,7 +51,7 @@
 #define Bytes_val String_val
 #endif
 
-static inline double clip(double s) {
+static inline float clip(float s) {
   if (s < -1) {
     return -1;
   } else if (s > 1) {
