@@ -34,6 +34,7 @@
 #include <caml/misc.h>
 #include <caml/mlvalues.h>
 #include <caml/signals.h>
+#include <caml/threads.h>
 
 #include <vorbis/codec.h>
 #include <vorbis/vorbisenc.h>
@@ -289,9 +290,9 @@ CAMLprim value ocaml_vorbis_decode_pcm(value vorbis_state, value stream_state,
     if (ret == -1)
       caml_raise_constant(*caml_named_value("ogg_exn_out_of_sync"));
 
-    caml_enter_blocking_section();
+    caml_release_runtime_system();
     ret = vorbis_synthesis(vb, &op);
-    caml_leave_blocking_section();
+    caml_acquire_runtime_system();
 
     if (ret == 0)
       ret = vorbis_synthesis_blockin(vd, vb);
@@ -363,9 +364,9 @@ CAMLprim value ocaml_vorbis_decode_pcm_ba(value vorbis_state,
     if (ret == -1)
       caml_raise_constant(*caml_named_value("ogg_exn_out_of_sync"));
 
-    caml_enter_blocking_section();
+    caml_release_runtime_system();
     ret = vorbis_synthesis(vb, &op);
-    caml_leave_blocking_section();
+    caml_acquire_runtime_system();
 
     if (ret == 0)
       ret = vorbis_synthesis_blockin(vd, vb);
@@ -521,7 +522,7 @@ CAMLprim value ocaml_vorbis_encode_float(value vdsp, value vogg, value data,
       vorbis_buffer[c][i] = Double_field(datac, i + offs);
   }
 
-  caml_enter_blocking_section();
+  caml_release_runtime_system();
   vorbis_analysis_wrote(vd, len);
 
   /* TODO: split the encoding part? */
@@ -535,7 +536,7 @@ CAMLprim value ocaml_vorbis_encode_float(value vdsp, value vogg, value data,
     while (vorbis_bitrate_flushpacket(vd, op))
       ogg_stream_packetin(os, op);
   }
-  caml_leave_blocking_section();
+  caml_acquire_runtime_system();
 
   CAMLreturn(Val_unit);
 }
@@ -572,7 +573,7 @@ CAMLprim value ocaml_vorbis_encode_float_ba(value vdsp, value vogg, value data,
     }
   }
 
-  caml_enter_blocking_section();
+  caml_release_runtime_system();
   vorbis_analysis_wrote(vd, len);
 
   /* TODO: split the encoding part? */
@@ -586,7 +587,7 @@ CAMLprim value ocaml_vorbis_encode_float_ba(value vdsp, value vogg, value data,
     while (vorbis_bitrate_flushpacket(vd, op))
       ogg_stream_packetin(os, op);
   }
-  caml_leave_blocking_section();
+  caml_acquire_runtime_system();
 
   CAMLreturn(Val_unit);
 }
@@ -637,11 +638,11 @@ static size_t read_func_cb(void *ptr, size_t size, size_t nmemb,
   value ret;
   int len;
 
-  caml_leave_blocking_section();
+  caml_acquire_runtime_system();
   ret = caml_callback(df->read_func, Val_int(size * nmemb));
   len = Int_val(Field(ret, 1));
   memcpy(ptr, String_val(Field(ret, 0)), len);
-  caml_enter_blocking_section();
+  caml_release_runtime_system();
 
   return len;
 }
@@ -667,9 +668,9 @@ static int seek_func_cb(void *datasource, ogg_int64_t offset, int whence) {
   default:
     assert(0);
   }
-  caml_leave_blocking_section();
+  caml_acquire_runtime_system();
   ret = Int_val(caml_callback2(df->seek_func, Val_int(offset), Val_int(cmd)));
-  caml_enter_blocking_section();
+  caml_release_runtime_system();
 
   return ret;
 }
@@ -678,9 +679,9 @@ static long tell_func_cb(void *datasource) {
   myvorbis_dec_file_t *df = datasource;
   int ret;
 
-  caml_leave_blocking_section();
+  caml_acquire_runtime_system();
   ret = Int_val(caml_callback(df->tell_func, Val_unit));
-  caml_enter_blocking_section();
+  caml_release_runtime_system();
 
   return ret;
 }
@@ -708,9 +709,9 @@ CAMLprim value ocaml_vorbis_open_dec_stream(value read_func, value seek_func,
   caml_register_global_root(&df->tell_func);
   df->tell_func = tell_func;
 
-  caml_enter_blocking_section();
+  caml_release_runtime_system();
   ret = ov_open_callbacks(df, df->ovf, NULL, 0, callbacks);
-  caml_leave_blocking_section();
+  caml_acquire_runtime_system();
 
   if (ret < 0) {
     caml_remove_global_root(&df->tell_func);
@@ -755,10 +756,10 @@ CAMLprim value ocaml_vorbis_decode(value d_f, value be_, value ss_,
    * has been released.  Callbacks are responsible for taking it back if they
    * need to call ocaml code.
    */
-  caml_enter_blocking_section();
+  caml_release_runtime_system();
   ret =
       ov_read(df->ovf, buf, len, big_endian, sample_size, sign, &df->bitstream);
-  caml_leave_blocking_section();
+  caml_acquire_runtime_system();
 
   if (ret <= 0) {
     free(buf);
@@ -800,9 +801,9 @@ CAMLprim value ocaml_vorbis_decode_float(value d_f, value dst, value ofs_,
    * has been released.  Callbacks are responsible for taking it back if they
    * need to call ocaml code.
    */
-  caml_enter_blocking_section();
+  caml_release_runtime_system();
   ret = ov_read_float(df->ovf, &buf, len, &df->bitstream);
-  caml_leave_blocking_section();
+  caml_acquire_runtime_system();
 
   if (ret <= 0)
     ret ? raise_err(ret) : caml_raise_end_of_file();
@@ -832,9 +833,9 @@ CAMLprim value ocaml_vorbis_decode_float_alloc(value d_f, value len_) {
    * has been released.  Callbacks are responsible for taking it back if they
    * need to call ocaml code.
    */
-  caml_enter_blocking_section();
+  caml_release_runtime_system();
   ret = ov_read_float(df->ovf, &buf, len, &df->bitstream);
-  caml_leave_blocking_section();
+  caml_acquire_runtime_system();
 
   if (ret <= 0)
     ret ? raise_err(ret) : caml_raise_end_of_file();
@@ -875,9 +876,9 @@ CAMLprim value ocaml_vorbis_decode_float_ba(value d_f, value dst, value ofs_,
    * has been released.  Callbacks are responsible for taking it back if they
    * need to call ocaml code.
    */
-  caml_enter_blocking_section();
+  caml_release_runtime_system();
   ret = ov_read_float(df->ovf, &buf, len, &df->bitstream);
-  caml_leave_blocking_section();
+  caml_acquire_runtime_system();
 
   if (ret <= 0)
     ret ? raise_err(ret) : caml_raise_end_of_file();
@@ -907,9 +908,9 @@ CAMLprim value ocaml_vorbis_decode_float_alloc_ba(value d_f, value len_) {
    * has been released.  Callbacks are responsible for taking it back if they
    * need to call ocaml code.
    */
-  caml_enter_blocking_section();
+  caml_release_runtime_system();
   ret = ov_read_float(df->ovf, &buf, len, &df->bitstream);
-  caml_leave_blocking_section();
+  caml_acquire_runtime_system();
 
   if (ret <= 0)
     ret ? raise_err(ret) : caml_raise_end_of_file();
@@ -937,9 +938,9 @@ CAMLprim value ocaml_vorbis_decoder_info(value d_f, value bs) {
   int bitstream = Int_val(bs);
   vorbis_info *vi;
 
-  caml_enter_blocking_section();
+  caml_release_runtime_system();
   vi = ov_info(df->ovf, bitstream);
-  caml_leave_blocking_section();
+  caml_acquire_runtime_system();
 
   assert(vi);
   ans = caml_alloc_tuple(7);
@@ -963,9 +964,9 @@ CAMLprim value ocaml_vorbis_get_dec_file_comments(value d_f, value link_) {
   int i;
   vorbis_comment *vc;
 
-  caml_enter_blocking_section();
+  caml_release_runtime_system();
   vc = ov_comment(df->ovf, link);
-  caml_leave_blocking_section();
+  caml_acquire_runtime_system();
 
   if (!vc)
     /* TODO: better error */
@@ -991,9 +992,9 @@ CAMLprim value ocaml_vorbis_decoder_bitrate(value d_f, value bs) {
   int bitstream = Int_val(bs);
   long ret;
 
-  caml_enter_blocking_section();
+  caml_release_runtime_system();
   ret = ov_bitrate(df->ovf, bitstream);
-  caml_leave_blocking_section();
+  caml_acquire_runtime_system();
 
   CAMLreturn(Val_int(ret));
 }
@@ -1004,9 +1005,9 @@ CAMLprim value ocaml_vorbis_decoder_time_total(value d_f, value bs) {
   int bitstream = Int_val(bs);
   double ret;
 
-  caml_enter_blocking_section();
+  caml_release_runtime_system();
   ret = ov_time_total(df->ovf, bitstream);
-  caml_leave_blocking_section();
+  caml_acquire_runtime_system();
 
   CAMLreturn(caml_copy_double(ret));
 }
@@ -1017,9 +1018,9 @@ CAMLprim value ocaml_vorbis_decoder_pcm_total(value d_f, value bs) {
   int bitstream = Int_val(bs);
   ogg_int64_t ret;
 
-  caml_enter_blocking_section();
+  caml_release_runtime_system();
   ret = ov_pcm_total(df->ovf, bitstream);
-  caml_leave_blocking_section();
+  caml_acquire_runtime_system();
 
   CAMLreturn(Val_int(ret));
 }
@@ -1029,9 +1030,9 @@ CAMLprim value ocaml_vorbis_decoder_streams(value d_f) {
   myvorbis_dec_file_t *df = Decfile_val(d_f);
   long ret;
 
-  caml_enter_blocking_section();
+  caml_release_runtime_system();
   ret = ov_streams(df->ovf);
-  caml_leave_blocking_section();
+  caml_acquire_runtime_system();
 
   CAMLreturn(Val_int(ret));
 }
@@ -1042,9 +1043,9 @@ CAMLprim value ocaml_vorbis_decoder_serialnumber(value d_f, value bs) {
   int bitstream = Int_val(bs);
   long ret;
 
-  caml_enter_blocking_section();
+  caml_release_runtime_system();
   ret = ov_serialnumber(df->ovf, bitstream);
-  caml_leave_blocking_section();
+  caml_acquire_runtime_system();
 
   CAMLreturn(Val_int(ret));
 }
