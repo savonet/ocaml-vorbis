@@ -22,7 +22,7 @@
 let check = Vorbis.Decoder.check_packet
 let buflen = 1024
 
-let decoder os =
+let decoder ~fill:_ os =
   let decoder = ref None in
   let packet1 = ref None in
   let packet2 = ref None in
@@ -70,7 +70,7 @@ let decoder os =
       },
       meta )
   in
-  let restart new_os =
+  let restart ~fill:_ new_os =
     os := new_os;
     let d, _, _ = init () in
     Vorbis.Decoder.restart d

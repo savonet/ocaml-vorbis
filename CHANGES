@@ -2,6 +2,7 @@
 =====
 * Add bigarray API.
 * Clip decoded data.
+* Addapt to ocaml-ogg `0.8.0` decoder API.
 
 0.8.0 (08-03-2021)
 =====
